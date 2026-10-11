@@ -2,10 +2,9 @@ from datetime import timedelta
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.api.deps import CurrentUser, UserServiceDep, get_current_active_superuser
+from app.api.deps import CurrentUser, UserServiceDep
 from app.core import security
 from app.core.config import settings
 from app.core.security import generate_password_reset_token, verify_password_reset_token
@@ -83,29 +82,3 @@ def reset_password(service: UserServiceDep, body: NewPassword) -> Message:
         raise HTTPException(status_code=400, detail="Inactive user")
     service.reset_password(user, body.new_password)
     return Message(message="Password updated successfully")
-
-
-@router.post(
-    "/password-recovery-html-content/{email}",
-    dependencies=[Depends(get_current_active_superuser)],
-    response_class=HTMLResponse,
-)
-def recover_password_html_content(email: str, service: UserServiceDep) -> Any:
-    """
-    HTML Content for Password Recovery
-    """
-    user = service.get_by_email(email)
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="The user with this username does not exist in the system.",
-        )
-    password_reset_token = generate_password_reset_token(email=email)
-    email_data = generate_reset_password_email(
-        email_to=user.email, email=email, token=password_reset_token
-    )
-
-    return HTMLResponse(
-        content=email_data.html_content, headers={"subject:": email_data.subject}
-    )
