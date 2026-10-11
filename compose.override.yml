@@ -66,13 +66,6 @@ services:
             - .venv
         - path: ./backend/pyproject.toml
           action: rebuild
-        - path: ./frontend
-          action: rebuild
-          ignore:
-            - ./frontend/node_modules
-            - ./frontend/dist
-            - ./frontend/blob-report
-            - ./frontend/test-results
     # TODO: remove once coverage is done locally
     volumes:
       - ./backend/htmlcov:/app/backend/htmlcov
@@ -91,28 +84,3 @@ services:
     ports:
       - "8025:8025"
       - "1025:1025"
-
-  playwright:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile.playwright
-      args:
-        - NODE_ENV=production
-    ipc: host
-    depends_on:
-      - backend
-      - mailpit
-    environment:
-      - FIRST_SUPERUSER=${FIRST_SUPERUSER:?Variable not set}
-      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD:?Variable not set}
-      - PLAYWRIGHT_BASE_URL=http://backend:8000
-      - VITE_API_URL=http://backend:8000
-      - MAILPIT_HOST=http://mailpit:8025
-      # For the reports when run locally
-      - PLAYWRIGHT_HTML_HOST=0.0.0.0
-      - CI=${CI:-}
-    volumes:
-      - ./frontend/blob-report:/app/frontend/blob-report
-      - ./frontend/test-results:/app/frontend/test-results
-    ports:
-      - 9323:9323

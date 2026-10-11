@@ -35,7 +35,7 @@ server {
     }
 }
 
-# Application: frontend + API, load balanced across backend replicas
+# API, load balanced across backend replicas
 server {
     listen 443 ssl default_server;
     http2 on;

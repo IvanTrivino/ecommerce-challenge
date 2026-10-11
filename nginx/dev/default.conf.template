@@ -21,7 +21,7 @@ map $http_upgrade $connection_upgrade {
     ""      close;
 }
 
-# Application: frontend + API, load balanced across backend replicas
+# API, load balanced across backend replicas
 server {
     listen 80 default_server;
     server_name _;

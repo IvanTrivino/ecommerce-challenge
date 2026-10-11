@@ -13,7 +13,6 @@ x-backend: &backend
     SMTP_PASSWORD: ${SMTP_PASSWORD:-}
     EMAILS_FROM_EMAIL: ${EMAILS_FROM_EMAIL}
     DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?Variable not set}@db:5432/app
-    SENTRY_DSN: ${SENTRY_DSN:-}
     # Trust X-Forwarded-* headers coming from nginx (private Docker network)
     FORWARDED_ALLOW_IPS: "*"
     REDIS_CACHE_URL: redis://redis-cache:6379/0

@@ -3,7 +3,6 @@ from typing import Literal, Self
 
 from pydantic import (
     EmailStr,
-    HttpUrl,
     PostgresDsn,
     computed_field,
     field_validator,
@@ -27,7 +26,6 @@ class Settings(BaseSettings):
     FASTAPI_ENV: Literal["development"] | None = None
 
     PROJECT_NAME: str
-    SENTRY_DSN: HttpUrl | None = None
     DATABASE_URL: PostgresDsn
 
     @field_validator("DATABASE_URL", mode="before")
