@@ -1,5 +1,17 @@
 from app.schemas.auth import NewPassword, Token
 from app.schemas.common import Message
+from app.schemas.products import (
+    ProductBase,
+    ProductCategoriesPublic,
+    ProductCategoryBase,
+    ProductCategoryCreate,
+    ProductCategoryPublic,
+    ProductCategoryUpdate,
+    ProductCreate,
+    ProductPublic,
+    ProductsPublic,
+    ProductUpdate,
+)
 from app.schemas.users import (
     UpdatePassword,
     UserBase,
@@ -14,6 +26,16 @@ from app.schemas.users import (
 __all__ = [
     "Message",
     "NewPassword",
+    "ProductBase",
+    "ProductCategoriesPublic",
+    "ProductCategoryBase",
+    "ProductCategoryCreate",
+    "ProductCategoryPublic",
+    "ProductCategoryUpdate",
+    "ProductCreate",
+    "ProductPublic",
+    "ProductUpdate",
+    "ProductsPublic",
     "Token",
     "UpdatePassword",
     "UserBase",

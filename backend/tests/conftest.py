@@ -5,10 +5,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
+from app.core import cache
 from app.core.config import settings
 from app.core.db import engine, init_db
 from app.main import app
-from app.models import User
+from app.models import Product, ProductCategory, User
+from tests.utils.cache import FakeRedis
 from tests.utils.user import authentication_token_from_email
 from tests.utils.utils import get_superuser_token_headers
 
@@ -18,8 +20,18 @@ def db() -> Generator[Session]:
     with Session(engine) as session:
         init_db(session)
         yield session
+        session.execute(delete(Product))
+        session.execute(delete(ProductCategory))
         session.execute(delete(User))
         session.commit()
+
+
+@pytest.fixture(autouse=True)
+def fake_cache(monkeypatch: pytest.MonkeyPatch) -> FakeRedis:
+    """Isolate every test from the real Redis cache."""
+    fake = FakeRedis()
+    monkeypatch.setattr(cache, "get_cache", lambda: fake)
+    return fake
 
 
 @pytest.fixture(scope="module")
