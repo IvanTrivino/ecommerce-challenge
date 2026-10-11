@@ -1,0 +1,275 @@
+# Production stack (also runnable locally):
+#   docker compose --env-file .env.prod -f compose.prod.yml up -d
+# Always pass --env-file: the tracked .env holds development defaults that
+# Compose would otherwise silently use for interpolation.
+#
+# Self-contained: Postgres, both Redis instances, Elasticsearch and RustFS all
+# run in this file, so it can also be run locally (see .env.prod.example and
+# scripts/local-certs.sh). Only nginx (80/443) and the RustFS S3 API (9000, for
+# presigned URLs) are published; every service restarts on failure, has
+# resource limits, and all secrets must be provided (no defaults).
+# To use AWS S3 or another provider instead of RustFS, set S3_ENDPOINT_URL (and
+# the other S3_* variables) and remove the rustfs service.
+# SMTP is optional: without SMTP_HOST the app simply doesn't send emails.
+#
+# Required: DOMAIN, PROJECT_NAME, SECRET_KEY, FIRST_SUPERUSER,
+# FIRST_SUPERUSER_PASSWORD, POSTGRES_PASSWORD, S3_ACCESS_KEY, S3_SECRET_KEY.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-backend: &backend
+  image: ${BACKEND_IMAGE:-backend:latest}
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+  restart: always
+  logging: *logging
+  environment: &backend-env
+    PROJECT_NAME: ${PROJECT_NAME:?Variable not set}
+    SECRET_KEY: ${SECRET_KEY:?Variable not set}
+    FIRST_SUPERUSER: ${FIRST_SUPERUSER:?Variable not set}
+    FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD:?Variable not set}
+    FRONTEND_HOST: ${FRONTEND_HOST:-https://${DOMAIN:?Variable not set}}
+    DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?Variable not set}@db:5432/app
+    # Trust X-Forwarded-* headers coming from nginx (private Docker network)
+    FORWARDED_ALLOW_IPS: "*"
+    REDIS_CACHE_URL: redis://redis-cache:6379/0
+    CELERY_BROKER_URL: redis://redis-broker:6379/0
+    CELERY_RESULT_BACKEND: redis://redis-broker:6379/1
+    SMTP_HOST: ${SMTP_HOST:-}
+    SMTP_PORT: ${SMTP_PORT:-587}
+    SMTP_TLS: ${SMTP_TLS:-true}
+    SMTP_SSL: ${SMTP_SSL:-false}
+    SMTP_USER: ${SMTP_USER:-}
+    SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    EMAILS_FROM_EMAIL: ${EMAILS_FROM_EMAIL:-}
+    S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://rustfs:9000}
+    # Endpoint browsers use for presigned URLs (RustFS API published on 9000)
+    S3_PUBLIC_ENDPOINT_URL: ${S3_PUBLIC_ENDPOINT_URL:-http://localhost:9000}
+    S3_ACCESS_KEY: ${S3_ACCESS_KEY:?Variable not set}
+    S3_SECRET_KEY: ${S3_SECRET_KEY:?Variable not set}
+    S3_REGION: ${S3_REGION:-us-east-1}
+    S3_BUCKET: ${S3_BUCKET:-ecommerce}
+    S3_ADDRESSING_STYLE: ${S3_ADDRESSING_STYLE:-path}
+    ELASTICSEARCH_URL: http://elasticsearch:9200
+
+services:
+
+  proxy:
+    image: nginx:1.30-alpine
+    restart: always
+    logging: *logging
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      # ACME challenges + redirect to HTTPS
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Rendered with envsubst at startup (only ${DOMAIN} is substituted)
+      - ./nginx/prod:/etc/nginx/templates:ro
+      # Certificates issued by certbot on the host (CERTS_DIR overrides the
+      # location, e.g. ./certs for the self-signed local ones)
+      - ${CERTS_DIR:-/etc/letsencrypt}:/etc/letsencrypt:ro
+      # Webroot for certbot's HTTP-01 challenge
+      - /var/www/certbot:/var/www/certbot:ro
+    environment:
+      DOMAIN: ${DOMAIN:?Variable not set}
+      NGINX_ENVSUBST_FILTER: DOMAIN
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  db:
+    image: postgres:18
+    restart: always
+    logging: *logging
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Variable not set}
+      POSTGRES_DB: app
+    volumes:
+      - app-db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # Redis #1: application cache. Ephemeral, evicts least recently used keys.
+  redis-cache:
+    image: redis:8-alpine
+    restart: always
+    logging: *logging
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  # Redis #2: Celery message broker (+ results). Persistent, must never evict.
+  redis-broker:
+    image: redis:8-alpine
+    restart: always
+    logging: *logging
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis-broker-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # S3-compatible object storage. Only the API port is published (browsers
+  # need it for presigned URLs); the web console stays internal.
+  rustfs:
+    image: rustfs/rustfs:1.0.1
+    restart: always
+    logging: *logging
+    ports:
+      - "9000:9000"
+    environment:
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:?Variable not set}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:?Variable not set}
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+    volumes:
+      - rustfs-data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # Not published to the host. Security is off because only containers on this
+  # compose network can reach it; enable xpack security and set
+  # ELASTICSEARCH_API_KEY before ever exposing it.
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
+    restart: always
+    logging: *logging
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: ${ES_JAVA_OPTS:--Xms1g -Xmx1g}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  # One-shot: migrations, initial data, bucket check. Run once here so the
+  # API replicas don't race each other doing the same thing on startup.
+  prestart:
+    <<: *backend
+    command: ["bash", "scripts/prestart.sh"]
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+      rustfs:
+        condition: service_started
+
+  backend:
+    <<: *backend
+    # No container_name / host port: replicas are reached through nginx
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          memory: 1G
+    depends_on:
+      prestart:
+        condition: service_completed_successfully
+      redis-cache:
+        condition: service_healthy
+      redis-broker:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  celery-worker:
+    <<: *backend
+    command: ["celery", "-A", "app.core.celery_app", "worker", "--loglevel=info"]
+    depends_on:
+      prestart:
+        condition: service_completed_successfully
+      redis-broker:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.core.celery_app inspect ping -d celery@$$HOSTNAME"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # Exactly ONE beat instance, otherwise scheduled tasks fire multiple times.
+  celery-beat:
+    <<: *backend
+    command: ["celery", "-A", "app.core.celery_app", "beat", "--loglevel=info", "-s", "/tmp/celerybeat-schedule"]
+    depends_on:
+      prestart:
+        condition: service_completed_successfully
+      redis-broker:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+volumes:
+  app-db-data:
+  redis-broker-data:
+  rustfs-data:
+  elasticsearch-data:

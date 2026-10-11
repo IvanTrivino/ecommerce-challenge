@@ -7,7 +7,7 @@ For local development, run PostgreSQL and Mailpit with Docker Compose, and run t
 Start the supporting services:
 
 ```bash
-docker compose up -d db mailpit
+docker compose up -d db mailpit redis-cache redis-broker rustfs elasticsearch
 ```
 
 Then, from the `backend` directory, install the dependencies and prepare the database:
@@ -58,7 +58,7 @@ To run the backend and built frontend in Docker Compose:
 
 ```bash
 docker compose run --rm backend bash scripts/prestart.sh
-docker compose watch
+docker compose up -d
 ```
 
 Now you can open these URLs:
@@ -87,18 +87,17 @@ The backend replicas don't publish a host port; everything goes through Nginx on
 
 ## Docker Compose Files and Environment Variables
 
-The main `compose.yml` file contains the configuration shared by the whole stack. Docker Compose loads it automatically.
+There are two standalone Compose files, one per environment:
 
-The `compose.override.yml` file adds local development settings, such as mounting the source code as a volume. Docker Compose also loads it automatically and applies it on top of `compose.yml`.
-
-The `compose.deploy.yml` file contains the deployment-specific settings, including HTTPS and automatic certificate handling. It is explicitly combined with `compose.yml` when deploying the application.
+* `compose.dev.yml`: local development. Every service is published on its own port, `./backend` is bind-mounted into the containers (no rebuild or restart; the API and Celery reload on change), and Mailpit, Adminer and RustFS run locally. `.env` sets `COMPOSE_FILE=compose.dev.yml`, so plain `docker compose` commands use it.
+* `compose.prod.yml`: production. It is self-contained (Postgres, Redis, RustFS and Elasticsearch included), publishes only nginx (80/443, HTTPS) and the RustFS API (9000), restarts services automatically, has resource limits, and requires every secret. Copy `.env.prod.example` to `.env.prod` and run `docker compose --env-file .env.prod -f compose.prod.yml up -d --build`, so the development defaults in `.env` are never used. To run it locally, first create a self-signed certificate with `bash scripts/local-certs.sh`.
 
 The backend reads local settings from the `.env` file. Docker Compose also uses it for variable interpolation and passes the settings each container needs.
 
 After changing variables, make sure you restart the stack:
 
 ```bash
-docker compose watch
+docker compose up -d
 ```
 
 ## The `.env` File

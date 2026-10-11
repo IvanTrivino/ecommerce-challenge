@@ -29,7 +29,15 @@ The API is available at `http://localhost:8000`, with automatic interactive docs
 
 Run backend commands from `./backend/` with `uv run`. Make sure your editor uses the Python interpreter at `.venv/bin/python` in the project root.
 
-Modify or add SQLModel models for data and SQL tables in `./backend/app/models.py`, API endpoints in `./backend/app/api/`, CRUD (Create, Read, Update, Delete) utils in `./backend/app/crud.py`.
+The backend is layered, with a domain subfolder (for example `users/`) inside each layer:
+
+* `app/api/`: routes (`routes/<domain>/router.py`) and dependencies (`deps/`).
+* `app/services/`: business logic.
+* `app/repositories/`: database access. Extend `BaseRepository` in `repositories/base.py` and build queries on `_live()` so soft-deleted rows are excluded.
+* `app/models/`: SQLAlchemy ORM models. Extend `Base` (`models/base.py`), which provides `id`, `is_deleted`, `created_at` and `updated_at`.
+* `app/schemas/`: Pydantic DTOs for requests and responses.
+
+Dependencies flow one way: api → services → repositories → models.
 
 ## VS Code
 
@@ -39,18 +47,18 @@ The setup is also already configured so you can run the tests through the VS Cod
 
 ## Full Stack with Docker Compose
 
-To run the backend and built frontend in Docker Compose:
+To run the backend and its services (Postgres, Redis, Celery, Elasticsearch, RustFS) in Docker Compose:
 
 ```console
 $ docker compose run --rm backend bash scripts/prestart.sh
-$ docker compose watch
+$ docker compose up -d
 ```
 
-The application is available at `http://localhost` (Nginx, load balancing 3 backend replicas).
+The API is available at `http://localhost:8000`. The frontend is not served by this stack..
 
-### Docker Compose Override
+### Compose Files
 
-The `compose.override.yml` file contains local settings for published ports, source synchronization, automatic image rebuilds, and backend reloads. Docker Compose applies it automatically when you run `docker compose` without an explicit file list.
+`compose.dev.yml` is the development stack: published ports, a bind mount of `./backend`, and backend reloads. The root `.env` sets `COMPOSE_FILE=compose.dev.yml`, so plain `docker compose` commands use it. Production is `compose.prod.yml`, run with `--env-file .env.prod`.
 
 To open a shell in the backend container:
 
@@ -67,8 +75,6 @@ $ uv run bash scripts/test.sh
 ```
 
 The tests run with Pytest. Modify existing tests or add new ones in `./backend/tests/`.
-
-If you use GitHub Actions, the tests will run automatically.
 
 ### Test a Running Stack
 
@@ -94,7 +100,7 @@ When the tests run, they generate `htmlcov/index.html`. Open it in your browser 
 
 Make sure you create a revision of your models and upgrade the database with that revision every time you change them. From the `backend` directory, use `uv` to run Alembic against the PostgreSQL container:
 
-* Alembic is already configured to import your SQLModel models from `./backend/app/models.py`.
+* Alembic is already configured to import the models through `Base.metadata` (models are exported from `./backend/app/models/`). Make sure a new model is imported there so autogenerate sees it.
 
 * After changing a model (for example, adding a column), create a revision:
 
@@ -110,19 +116,7 @@ $ uv run alembic revision --autogenerate -m "Add column last_name to User model"
 $ uv run alembic upgrade head
 ```
 
-If you don't want to use migrations at all, uncomment the lines in the file at `./backend/app/core/db.py` that end in:
-
-```python
-SQLModel.metadata.create_all(engine)
-```
-
-and comment the line in the file `scripts/prestart.sh` that contains:
-
-```console
-$ alembic upgrade head
-```
-
-If you don't want to start with the default models and want to remove them / modify them, from the beginning, without having any previous revision, you can remove the revision files (`.py` Python files) under `./backend/app/alembic/versions/`. And then create a first migration as described above.
+To start over without any previous revision, remove the revision files (`.py` files) under `./backend/app/alembic/versions/` and create a first migration as described above.
 
 ## Email Templates
 
@@ -136,7 +130,7 @@ To preview the emails while editing them, start the dev server from the root of 
 $ bun run email:dev
 ```
 
-Values coming from the backend are declared as Jinja placeholders in the component props, for example `username = "{{ username }}"`. The context for each email is built in `generate_*_email()` in `./backend/app/utils.py`, so a new placeholder needs to be added there too.
+Values coming from the backend are declared as Jinja placeholders in the component props, for example `username = "{{ username }}"`. The context for each email is built in `generate_*_email()` in `./backend/app/services/email/email_service.py`, so a new placeholder needs to be added there too.
 
 Once you are done, regenerate the templates used by the application:
 

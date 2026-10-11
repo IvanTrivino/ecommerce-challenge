@@ -1,76 +1,79 @@
+# Local development stack: `docker compose -f compose.dev.yml up`
+# (or just `docker compose up`, since .env sets COMPOSE_FILE).
+#
+# Everything is reachable from the host on its own port. ./backend is
+# bind-mounted into the containers, so edits on the host show up instantly and
+# the API and Celery processes reload on their own (no rebuild or restart).
+# Only a change to dependencies (pyproject.toml / uv.lock) needs
+# `docker compose build`. Not meant for deployment:
+# see compose.prod.yml.
+
 x-backend: &backend
-  image: backend:latest
+  image: backend:dev
   build:
     context: .
     dockerfile: backend/Dockerfile
   environment: &backend-env
+    FASTAPI_ENV: development
     PROJECT_NAME: ${PROJECT_NAME:?Variable not set}
     SECRET_KEY: ${SECRET_KEY:?Variable not set}
     FIRST_SUPERUSER: ${FIRST_SUPERUSER:?Variable not set}
     FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD:?Variable not set}
-    SMTP_HOST: ${SMTP_HOST}
-    SMTP_USER: ${SMTP_USER:-}
-    SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-    EMAILS_FROM_EMAIL: ${EMAILS_FROM_EMAIL}
     DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?Variable not set}@db:5432/app
-    # Trust X-Forwarded-* headers coming from nginx (private Docker network)
-    FORWARDED_ALLOW_IPS: "*"
     REDIS_CACHE_URL: redis://redis-cache:6379/0
     CELERY_BROKER_URL: redis://redis-broker:6379/0
     CELERY_RESULT_BACKEND: redis://redis-broker:6379/1
+    # Mailpit catches every outgoing email: http://localhost:8025
+    SMTP_HOST: mailpit
+    SMTP_PORT: "1025"
+    SMTP_TLS: "false"
+    EMAILS_FROM_EMAIL: ${EMAILS_FROM_EMAIL:-info@example.com}
     S3_ENDPOINT_URL: http://rustfs:9000
     S3_PUBLIC_ENDPOINT_URL: ${S3_PUBLIC_ENDPOINT_URL:-http://localhost:9000}
     S3_ACCESS_KEY: ${S3_ACCESS_KEY:?Variable not set}
     S3_SECRET_KEY: ${S3_SECRET_KEY:?Variable not set}
     S3_REGION: ${S3_REGION:-us-east-1}
     S3_BUCKET: ${S3_BUCKET:-ecommerce}
-    S3_ADDRESSING_STYLE: ${S3_ADDRESSING_STYLE:-path}
+    S3_ADDRESSING_STYLE: path
     ELASTICSEARCH_URL: http://elasticsearch:9200
+
+# Shared code: the host's ./backend replaces /app/backend in the image. The
+# virtualenv lives in /app/.venv, outside the mount, so it is untouched.
+x-code-volume: &code-volume ./backend:/app/backend
 
 services:
 
-  proxy:
-    image: nginx:1.30-alpine
-    depends_on:
-      backend:
-        condition: service_healthy
-    volumes:
-      # Rendered with envsubst at startup (only ${DOMAIN} is substituted)
-      - ./nginx/dev:/etc/nginx/templates:ro
-    environment:
-      DOMAIN: ${DOMAIN:-localhost}
-      NGINX_ENVSUBST_FILTER: DOMAIN
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
   db:
     image: postgres:18
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Variable not set}
+      POSTGRES_DB: app
+    volumes:
+      - app-db-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
       interval: 10s
       retries: 5
       start_period: 30s
       timeout: 10s
-    volumes:
-      - app-db-data:/var/lib/postgresql
-    environment:
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Variable not set}
-      - POSTGRES_DB=app
 
   adminer:
     image: adminer
     depends_on:
       - db
+    ports:
+      - "8080:8080"
     environment:
-      - ADMINER_DESIGN=pepa-linha-dark
+      ADMINER_DESIGN: pepa-linha-dark
 
   # Redis #1: application cache. Ephemeral, evicts least recently used keys.
   redis-cache:
     image: redis:8-alpine
     command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -81,6 +84,8 @@ services:
   redis-broker:
     image: redis:8-alpine
     command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "6380:6379"
     volumes:
       - redis-broker-data:/data
     healthcheck:
@@ -89,10 +94,12 @@ services:
       timeout: 5s
       retries: 5
 
-  # Local S3-compatible object storage. The app only speaks the S3 API
-  # (boto3), so this can be swapped for AWS S3 / R2 / etc. via S3_* variables.
+  # Local S3-compatible object storage (API on 9000, web console on 9001).
   rustfs:
     image: rustfs/rustfs:1.0.1
+    ports:
+      - "9000:9000"
+      - "9001:9001"
     environment:
       RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:?Variable not set}
       RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:?Variable not set}
@@ -105,10 +112,10 @@ services:
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
+    ports:
+      - "9200:9200"
     environment:
       discovery.type: single-node
-      # Security is off for local development. Enable it (and set
-      # ELASTICSEARCH_API_KEY) for any deployment reachable from outside.
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: -Xms512m -Xmx512m
     ulimits:
@@ -124,23 +131,35 @@ services:
       retries: 10
       start_period: 40s
 
-  # One-shot: migrations, initial data, bucket creation. Run once here so the
-  # API replicas don't race each other doing the same thing on startup.
+  # Web UI for the emails the app sends (SMTP on 1025).
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+  # One-shot: migrations, initial data, bucket creation.
   prestart:
     <<: *backend
     command: ["bash", "scripts/prestart.sh"]
     restart: "no"
+    volumes:
+      - *code-volume
     depends_on:
       db:
         condition: service_healthy
       rustfs:
         condition: service_started
 
+  # Single instance with auto-reload, published on http://localhost:8000
+  # (docs at /docs).
   backend:
     <<: *backend
-    # No container_name / host port: replicas are reached through nginx
-    deploy:
-      replicas: 3
+    command: ["fastapi", "dev", "--host", "0.0.0.0"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - *code-volume
     depends_on:
       prestart:
         condition: service_completed_successfully
@@ -158,7 +177,10 @@ services:
 
   celery-worker:
     <<: *backend
-    command: ["celery", "-A", "app.core.celery_app", "worker", "--loglevel=info"]
+    # Celery has no reloader: watchfiles restarts it when a .py file changes
+    command: ["watchfiles", "--filter", "python", "celery -A app.core.celery_app worker --loglevel=info", "app"]
+    volumes:
+      - *code-volume
     depends_on:
       prestart:
         condition: service_completed_successfully
@@ -178,7 +200,9 @@ services:
   # Exactly ONE beat instance, otherwise scheduled tasks fire multiple times.
   celery-beat:
     <<: *backend
-    command: ["celery", "-A", "app.core.celery_app", "beat", "--loglevel=info", "-s", "/tmp/celerybeat-schedule"]
+    command: ["watchfiles", "--filter", "python", "celery -A app.core.celery_app beat --loglevel=info -s /tmp/celerybeat-schedule", "app"]
+    volumes:
+      - *code-volume
     depends_on:
       prestart:
         condition: service_completed_successfully
