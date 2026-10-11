@@ -17,9 +17,7 @@ bun run dev
 
 Then open <http://localhost:5173/> in your browser.
 
-Run `uv run bash scripts/prestart.sh` and `uv run fastapi dev` from the `backend` directory, with PostgreSQL running in Docker Compose. See [../development.md](../development.md) for the complete setup.
-
-To serve the frontend with FastAPI, run `bun run build` from the `frontend` directory and open `http://localhost:8000`.
+Start the backend with `docker compose up` from the project root. See [../development.md](../development.md) for the complete setup.
 
 Check `frontend/package.json` to see the other available commands.
 
@@ -29,13 +27,7 @@ If you are developing an API-only app and want to remove the frontend, you can d
 
 * Remove the `./frontend` directory.
 
-* In the `backend/app/main.py` file, remove the `app.frontend()` call.
-
-* In the `backend/Dockerfile` file, remove the frontend build stage and the `COPY --from=frontend-build` instruction.
-
-* In the `compose.override.yml` file, remove the `playwright` service.
-
-* In the `.github/workflows/deploy.yml` file, remove the **Set up Bun**, **Install frontend dependencies**, and **Build frontend** steps.
+* The backend no longer serves or builds the frontend, so nothing else needs to change there.
 
 * In the `.fastapicloudignore` file, remove the `!backend/app/frontend/` entry.
 
@@ -96,7 +88,6 @@ The frontend code is structured as follows:
 The frontend includes initial end-to-end tests using Playwright. To run the tests, you need to have the Docker Compose stack running. Start the stack with the following command:
 
 ```bash
-docker compose run --rm backend bash scripts/prestart.sh
 docker compose up -d --wait backend
 ```
 
