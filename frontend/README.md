@@ -159,6 +159,17 @@ The frontend code is structured as follows:
 * `frontend/src/lib` - Shared frontend utilities.
 * `frontend/src/routes` - The frontend routes and pages.
 
+### Product images
+
+Admins add, replace and remove a product image from the backoffice dialogs. See the [spec](../backend/docs/specs/product-images.md).
+
+* `frontend/src/lib/productImages.ts` - Allowed types and size, the browser-side check and the upload to storage.
+* `frontend/src/hooks/useProductImageUpload.ts` - Presigns, uploads with progress and aborts on close.
+* `frontend/src/components/Backoffice/Products/ProductImageField.tsx` - The Image field of the product dialogs.
+* `frontend/src/components/Store/ProductImage.tsx` - Shows `image_url`, with the placeholder as a fallback.
+
+Uploads go **directly** to object storage (RustFS), never through the API, with a presigned POST. Storage only accepts requests from `FRONTEND_HOST` (CORS), so in dev it must match the origin of the dev server (`http://localhost:5173`). If you serve the frontend from another origin, set `FRONTEND_HOST` in `.env` and run `docker compose exec backend python app/initial_data.py` to apply it to the bucket.
+
 ## End-to-End Testing with Playwright
 
 The end-to-end tests cover the storefront, the backoffice, access control, the auth flows and keyboard/mobile (360px) checks.
