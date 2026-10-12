@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router"
 
 import type { ProductPublic } from "@/client"
-import { ProductImagePlaceholder } from "@/components/Store/ProductImagePlaceholder"
+import { ProductImage } from "@/components/Store/ProductImage"
 import { StockBadge } from "@/components/Store/StockBadge"
 import { useCategories } from "@/hooks/useCategories"
 import { formatPrice } from "@/lib/format"
@@ -16,7 +16,7 @@ export function ProductCard({ product }: { product: ProductPublic }) {
       data-testid="product-card"
       className="group flex flex-col overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
-      <ProductImagePlaceholder />
+      <ProductImage key={product.image_url} src={product.image_url} alt="" />
       <div className="flex flex-1 flex-col gap-2 p-4">
         <span className="text-xs text-muted-foreground">
           {categoryName(product.category_uuid)}

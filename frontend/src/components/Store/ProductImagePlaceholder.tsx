@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 export function ProductImagePlaceholder({ className }: { className?: string }) {
   return (
     <div
+      data-testid="product-image-placeholder"
       className={cn(
         "flex aspect-square w-full items-center justify-center bg-muted text-muted-foreground",
         className,

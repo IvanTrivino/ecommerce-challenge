@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react"
 import { z } from "zod"
 
 import NotFound from "@/components/Common/NotFound"
-import { ProductImagePlaceholder } from "@/components/Store/ProductImagePlaceholder"
+import { ProductImage } from "@/components/Store/ProductImage"
 import { StockBadge } from "@/components/Store/StockBadge"
 import { Button } from "@/components/ui/button"
 import { pageTitle } from "@/config"
@@ -49,7 +49,13 @@ function ProductDetail() {
         </Link>
       </Button>
       <div className="grid gap-8 md:grid-cols-2">
-        <ProductImagePlaceholder className="rounded-lg" />
+        <ProductImage
+          key={product.image_url}
+          src={product.image_url}
+          alt={product.name}
+          className="rounded-lg"
+          eager
+        />
         <div className="flex flex-col gap-4">
           <div>
             {category ? (

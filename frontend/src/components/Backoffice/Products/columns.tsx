@@ -3,6 +3,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import type { ProductPublic } from "@/client"
 import { ProductActionsMenu } from "@/components/Backoffice/Products/ProductActionsMenu"
 import type { DataTableFeatures } from "@/components/Common/DataTable"
+import { ProductImage } from "@/components/Store/ProductImage"
 import { useCategories } from "@/hooks/useCategories"
 import { formatDate, formatPrice } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -13,6 +14,18 @@ function CategoryCell({ categoryId }: { categoryId: string }) {
 }
 
 export const columns: ColumnDef<DataTableFeatures, ProductPublic>[] = [
+  {
+    id: "image",
+    header: () => <span className="sr-only">Image</span>,
+    cell: ({ row }) => (
+      <ProductImage
+        key={row.original.image_url}
+        src={row.original.image_url}
+        alt=""
+        className="size-10 rounded"
+      />
+    ),
+  },
   {
     accessorKey: "name",
     header: "Name",
