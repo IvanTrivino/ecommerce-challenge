@@ -5,6 +5,7 @@ import { UsersService } from "@/client"
 export const currentUserQueryOptions = queryOptions({
   queryKey: ["currentUser"],
   queryFn: async () => (await UsersService.readUserMe()).data,
+  retry: false,
 })
 
 export const usersQueryOptions = queryOptions({

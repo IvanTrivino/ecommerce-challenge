@@ -10,16 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LayoutRouteImport } from './routes/_layout'
+import { Route as StoreRouteImport } from './routes/_store'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
-import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as StoreIndexRouteImport } from './routes/_store/index'
+import { Route as StoreAccountRouteImport } from './routes/_store/account'
+import { Route as StoreSearchRouteImport } from './routes/_store/search'
+import { Route as StoreProductsProductIdRouteImport } from './routes/_store/products.$productId'
 
 const LayoutRoute = LayoutRouteImport.update({
   id: '/_layout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreRoute = StoreRouteImport.update({
+  id: '/_store',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -42,11 +50,6 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LayoutIndexRoute = LayoutIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => LayoutRoute,
-} as any)
 const LayoutAdminRoute = LayoutAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -57,35 +60,65 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const StoreIndexRoute = StoreIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StoreRoute,
+} as any)
+const StoreAccountRoute = StoreAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => StoreRoute,
+} as any)
+const StoreSearchRoute = StoreSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => StoreRoute,
+} as any)
+const StoreProductsProductIdRoute = StoreProductsProductIdRouteImport.update({
+  id: '/products/$productId',
+  path: '/products/$productId',
+  getParentRoute: () => StoreRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof LayoutIndexRoute
+  '/': typeof StoreIndexRoute
   '/login': typeof LoginRoute
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/settings': typeof LayoutSettingsRoute
+  '/account': typeof StoreAccountRoute
+  '/search': typeof StoreSearchRoute
+  '/products/$productId': typeof StoreProductsProductIdRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof StoreIndexRoute
   '/login': typeof LoginRoute
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/settings': typeof LayoutSettingsRoute
-  '/': typeof LayoutIndexRoute
+  '/account': typeof StoreAccountRoute
+  '/search': typeof StoreSearchRoute
+  '/products/$productId': typeof StoreProductsProductIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_layout': typeof LayoutRouteWithChildren
+  '/_store': typeof StoreRouteWithChildren
   '/login': typeof LoginRoute
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/settings': typeof LayoutSettingsRoute
-  '/_layout/': typeof LayoutIndexRoute
+  '/_store/account': typeof StoreAccountRoute
+  '/_store/search': typeof StoreSearchRoute
+  '/_store/': typeof StoreIndexRoute
+  '/_store/products/$productId': typeof StoreProductsProductIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,29 +130,40 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/settings'
+    | '/account'
+    | '/search'
+    | '/products/$productId'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/login'
     | '/recover-password'
     | '/reset-password'
     | '/signup'
     | '/admin'
     | '/settings'
-    | '/'
+    | '/account'
+    | '/search'
+    | '/products/$productId'
   id:
     | '__root__'
     | '/_layout'
+    | '/_store'
     | '/login'
     | '/recover-password'
     | '/reset-password'
     | '/signup'
     | '/_layout/admin'
     | '/_layout/settings'
-    | '/_layout/'
+    | '/_store/account'
+    | '/_store/search'
+    | '/_store/'
+    | '/_store/products/$productId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   LayoutRoute: typeof LayoutRouteWithChildren
+  StoreRoute: typeof StoreRouteWithChildren
   LoginRoute: typeof LoginRoute
   RecoverPasswordRoute: typeof RecoverPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -133,6 +177,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof LayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_store': {
+      id: '/_store'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof StoreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -163,13 +214,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_layout/': {
-      id: '/_layout/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof LayoutIndexRouteImport
-      parentRoute: typeof LayoutRoute
-    }
     '/_layout/admin': {
       id: '/_layout/admin'
       path: '/admin'
@@ -184,26 +228,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_store/': {
+      id: '/_store/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof StoreIndexRouteImport
+      parentRoute: typeof StoreRoute
+    }
+    '/_store/account': {
+      id: '/_store/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof StoreAccountRouteImport
+      parentRoute: typeof StoreRoute
+    }
+    '/_store/search': {
+      id: '/_store/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof StoreSearchRouteImport
+      parentRoute: typeof StoreRoute
+    }
+    '/_store/products/$productId': {
+      id: '/_store/products/$productId'
+      path: '/products/$productId'
+      fullPath: '/products/$productId'
+      preLoaderRoute: typeof StoreProductsProductIdRouteImport
+      parentRoute: typeof StoreRoute
+    }
   }
 }
 
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
-  LayoutIndexRoute: typeof LayoutIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
-  LayoutIndexRoute: LayoutIndexRoute,
 }
 
 const LayoutRouteWithChildren =
   LayoutRoute._addFileChildren(LayoutRouteChildren)
 
+interface StoreRouteChildren {
+  StoreAccountRoute: typeof StoreAccountRoute
+  StoreSearchRoute: typeof StoreSearchRoute
+  StoreIndexRoute: typeof StoreIndexRoute
+  StoreProductsProductIdRoute: typeof StoreProductsProductIdRoute
+}
+
+const StoreRouteChildren: StoreRouteChildren = {
+  StoreAccountRoute: StoreAccountRoute,
+  StoreSearchRoute: StoreSearchRoute,
+  StoreIndexRoute: StoreIndexRoute,
+  StoreProductsProductIdRoute: StoreProductsProductIdRoute,
+}
+
+const StoreRouteWithChildren = StoreRoute._addFileChildren(StoreRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   LayoutRoute: LayoutRouteWithChildren,
+  StoreRoute: StoreRouteWithChildren,
   LoginRoute: LoginRoute,
   RecoverPasswordRoute: RecoverPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
