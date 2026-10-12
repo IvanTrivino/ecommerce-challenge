@@ -29,7 +29,10 @@ test("Creating a category auto-fills the code from the name", async ({
 test("Editing the code by hand stops the auto-fill", async ({ page }) => {
   await page.goto("/admin/categories")
 
-  await page.getByRole("button", { name: "Add Category" }).click()
+  await expect(async () => {
+    await page.getByRole("button", { name: "Add Category" }).click()
+    await expect(page.getByRole("dialog")).toBeVisible({ timeout: 1000 })
+  }).toPass()
   await page.getByPlaceholder("Name").fill("First Name")
   await page.getByPlaceholder("Code").fill("custom-code")
   await page.getByPlaceholder("Name").fill("Second Name")

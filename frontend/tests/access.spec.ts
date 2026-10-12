@@ -39,8 +39,13 @@ test("Admin lands on the backoffice and can open the storefront", async ({
   await expect(page).toHaveURL("/admin")
   await page.getByRole("link", { name: "View store" }).click()
   await expect(page).toHaveURL("/")
-  await page.getByTestId("user-menu").click()
-  await expect(page.getByRole("menuitem", { name: "Backoffice" })).toBeVisible()
+  // the first click can land before the page is interactive
+  await expect(async () => {
+    await page.getByTestId("user-menu").click()
+    await expect(
+      page.getByRole("menuitem", { name: "Backoffice" }),
+    ).toBeVisible({ timeout: 1000 })
+  }).toPass()
 })
 
 test("Logged-in users are redirected away from the auth screens", async ({
