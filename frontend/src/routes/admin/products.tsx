@@ -1,5 +1,9 @@
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import {
+  createFileRoute,
+  stripSearchParams,
+  useNavigate,
+} from "@tanstack/react-router"
 import { Package } from "lucide-react"
 import { z } from "zod"
 
@@ -25,6 +29,7 @@ const productsSearch = z.object({
 
 export const Route = createFileRoute("/admin/products")({
   component: Products,
+  search: { middlewares: [stripSearchParams({ page: 1 })] },
   validateSearch: productsSearch,
   head: () => ({
     meta: [{ title: pageTitle("Products") }],

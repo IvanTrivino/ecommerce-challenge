@@ -58,6 +58,9 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
     },
   })
 
+  // read during render so react-hook-form tracks it
+  const { dirtyFields } = form.formState
+
   const mutation = useMutation({
     mutationFn: (data: ProductUpdate) =>
       ProductsService.updateProduct({
@@ -86,7 +89,7 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
   })
 
   const onSubmit = (data: ProductFormValues) => {
-    const changes = toUpdateBody(data, form.formState.dirtyFields)
+    const changes = toUpdateBody(data, dirtyFields)
     if (Object.keys(changes).length === 0) {
       setIsOpen(false)
       return

@@ -50,6 +50,9 @@ const EditCategory = ({ category, onSuccess }: EditCategoryProps) => {
     defaultValues: { name: category.name, code: category.code },
   })
 
+  // read during render so react-hook-form tracks it
+  const { dirtyFields } = form.formState
+
   const mutation = useMutation({
     mutationFn: (data: ProductCategoryUpdate) =>
       ProductCategoriesService.updateCategory({
@@ -74,7 +77,7 @@ const EditCategory = ({ category, onSuccess }: EditCategoryProps) => {
   })
 
   const onSubmit = (data: CategoryFormValues) => {
-    const { name, code } = form.formState.dirtyFields
+    const { name, code } = dirtyFields
     const changes: ProductCategoryUpdate = {}
     if (name) changes.name = data.name
     if (code) changes.code = data.code

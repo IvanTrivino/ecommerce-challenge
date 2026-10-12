@@ -7,10 +7,9 @@ import { StoreUserMenu } from "@/components/Store/StoreUserMenu"
 import { Button } from "@/components/ui/button"
 import { APP_NAME } from "@/config"
 import useAuth from "@/hooks/useAuth"
-import { isLoggedIn } from "@/lib/auth"
 
 export function StoreHeader() {
-  const { user } = useAuth()
+  const { user, loggedIn } = useAuth()
 
   return (
     <header className="sticky top-0 z-20 border-b bg-background">
@@ -26,7 +25,7 @@ export function StoreHeader() {
           <Appearance />
           {user ? (
             <StoreUserMenu user={user} />
-          ) : isLoggedIn() ? null : (
+          ) : loggedIn ? null : (
             <>
               <Button variant="ghost" asChild>
                 <Link to="/login">Log in</Link>

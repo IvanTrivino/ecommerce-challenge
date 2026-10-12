@@ -3,6 +3,7 @@ import {
   createFileRoute,
   Link,
   redirect,
+  stripSearchParams,
   useNavigate,
 } from "@tanstack/react-router"
 import { AxiosError } from "axios"
@@ -26,6 +27,7 @@ const searchSearch = z.object({
 
 export const Route = createFileRoute("/_store/search")({
   component: SearchResults,
+  search: { middlewares: [stripSearchParams({ page: 1 })] },
   validateSearch: searchSearch,
   beforeLoad: ({ search }) => {
     if (!search.q) throw redirect({ to: "/" })

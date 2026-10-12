@@ -91,3 +91,11 @@ export const deleteProduct = async (id: string) => {
   await asAdmin()
   await ProductsService.deleteProduct({ path: { product_id: id } })
 }
+
+export const deleteProductsInCategory = async (categoryId: string) => {
+  await asAdmin()
+  const { data } = await ProductsService.readProducts({
+    query: { category_uuid: categoryId, limit: 100 },
+  })
+  for (const product of data.data) await deleteProduct(product.id)
+}

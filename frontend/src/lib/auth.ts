@@ -6,9 +6,30 @@ import { queryClient } from "@/lib/queryClient"
 
 export const isLoggedIn = () => localStorage.getItem("access_token") !== null
 
+// Lets components re-render when the token changes outside React
+const listeners = new Set<() => void>()
+const notifyAuthChange = () => {
+  for (const listener of listeners) listener()
+}
+
+export function subscribeAuth(listener: () => void) {
+  listeners.add(listener)
+  window.addEventListener("storage", listener)
+  return () => {
+    listeners.delete(listener)
+    window.removeEventListener("storage", listener)
+  }
+}
+
+export function setToken(token: string) {
+  localStorage.setItem("access_token", token)
+  notifyAuthChange()
+}
+
 export function clearSession() {
   localStorage.removeItem("access_token")
   queryClient.removeQueries({ queryKey: currentUserQueryOptions.queryKey })
+  notifyAuthChange()
 }
 
 export const isSafeRedirect = (to?: string): to is string =>

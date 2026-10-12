@@ -1,5 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import {
+  createFileRoute,
+  Link,
+  stripSearchParams,
+  useNavigate,
+} from "@tanstack/react-router"
 import { z } from "zod"
 
 import { CategoryFilter } from "@/components/Store/CategoryFilter"
@@ -17,6 +22,7 @@ const catalogSearch = z.object({
 
 export const Route = createFileRoute("/_store/")({
   component: Catalog,
+  search: { middlewares: [stripSearchParams({ page: 1 })] },
   validateSearch: catalogSearch,
   loaderDeps: ({ search }) => search,
   loader: ({ context, deps }) => {

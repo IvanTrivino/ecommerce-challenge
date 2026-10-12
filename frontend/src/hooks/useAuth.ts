@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { useSyncExternalStore } from "react"
 
 import {
   type Body_login_login_access_token as AccessToken,
@@ -7,7 +8,14 @@ import {
   type UserRegister,
   UsersService,
 } from "@/client"
-import { clearSession, homeFor, isLoggedIn, isSafeRedirect } from "@/lib/auth"
+import {
+  clearSession,
+  homeFor,
+  isLoggedIn,
+  isSafeRedirect,
+  setToken,
+  subscribeAuth,
+} from "@/lib/auth"
 import { currentUserQueryOptions } from "@/lib/queries/users"
 import { handleError } from "@/utils"
 import useCustomToast from "./useCustomToast"
@@ -17,10 +25,12 @@ const useAuth = () => {
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
 
-  const { data: user } = useQuery({
+  const loggedIn = useSyncExternalStore(subscribeAuth, isLoggedIn)
+  const { data } = useQuery({
     ...currentUserQueryOptions,
-    enabled: isLoggedIn(),
+    enabled: loggedIn,
   })
+  const user = loggedIn ? data : undefined
 
   const signUpMutation = useMutation({
     mutationFn: (data: UserRegister) =>
@@ -41,7 +51,7 @@ const useAuth = () => {
     const response = await LoginService.loginAccessToken({
       body: credentials,
     })
-    localStorage.setItem("access_token", response.data.access_token)
+    setToken(response.data.access_token)
     const currentUser = await queryClient.fetchQuery(currentUserQueryOptions)
     return { currentUser, redirect }
   }
@@ -68,6 +78,7 @@ const useAuth = () => {
     loginMutation,
     logout,
     user,
+    loggedIn,
   }
 }
 

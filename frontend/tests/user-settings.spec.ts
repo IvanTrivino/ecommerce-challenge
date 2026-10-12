@@ -4,10 +4,10 @@ import { createUser } from "./utils/api.ts"
 import { randomEmail, randomPassword } from "./utils/random"
 import { logInUser, logOutUser } from "./utils/user"
 
-const tabs = ["My profile", "Password", "Danger zone"]
+const tabs = ["My profile", "Password"]
 
 test("My profile tab is active by default", async ({ page }) => {
-  await page.goto("/settings")
+  await page.goto("/admin/settings")
   await expect(page.getByRole("tab", { name: "My profile" })).toHaveAttribute(
     "aria-selected",
     "true",
@@ -15,10 +15,30 @@ test("My profile tab is active by default", async ({ page }) => {
 })
 
 test("All tabs are visible", async ({ page }) => {
-  await page.goto("/settings")
+  await page.goto("/admin/settings")
   for (const tab of tabs) {
     await expect(page.getByRole("tab", { name: tab })).toBeVisible()
   }
+})
+
+test("Superuser does not see the Danger zone tab", async ({ page }) => {
+  await page.goto("/admin/settings")
+  await expect(page.getByRole("tab", { name: "Password" })).toBeVisible()
+  await expect(page.getByRole("tab", { name: "Danger zone" })).toHaveCount(0)
+})
+
+test("Customer sees the Danger zone tab", async ({ browser }) => {
+  const context = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+  })
+  const page = await context.newPage()
+  const email = randomEmail()
+  const password = randomPassword()
+  await createUser({ email, password })
+  await logInUser(page, email, password)
+  await page.goto("/account")
+  await expect(page.getByRole("tab", { name: "Danger zone" })).toBeVisible()
+  await context.close()
 })
 
 test.describe("Edit user profile", () => {
@@ -34,7 +54,7 @@ test.describe("Edit user profile", () => {
 
   test.beforeEach(async ({ page }) => {
     await logInUser(page, email, password)
-    await page.goto("/settings")
+    await page.goto("/account")
     await page.getByRole("tab", { name: "My profile" }).click()
   })
 
@@ -72,7 +92,7 @@ test.describe("Edit user email", () => {
 
     await createUser({ email, password })
     await logInUser(page, email, password)
-    await page.goto("/settings")
+    await page.goto("/account")
     await page.getByRole("tab", { name: "My profile" }).click()
 
     await page.getByRole("button", { name: "Edit" }).click()
@@ -95,7 +115,7 @@ test.describe("Cancel edit actions", () => {
     const user = await createUser({ email, password })
 
     await logInUser(page, email, password)
-    await page.goto("/settings")
+    await page.goto("/account")
     await page.getByRole("tab", { name: "My profile" }).click()
     await page.getByRole("button", { name: "Edit" }).click()
     await page.getByLabel("Full name").fill("Test User")
@@ -112,7 +132,7 @@ test.describe("Cancel edit actions", () => {
     await createUser({ email, password })
 
     await logInUser(page, email, password)
-    await page.goto("/settings")
+    await page.goto("/account")
     await page.getByRole("tab", { name: "My profile" }).click()
     await page.getByRole("button", { name: "Edit" }).click()
     await page.getByLabel("Email").fill(randomEmail())
@@ -135,7 +155,7 @@ test.describe("Change password", () => {
     await createUser({ email, password })
     await logInUser(page, email, password)
 
-    await page.goto("/settings")
+    await page.goto("/account")
     await page.getByRole("tab", { name: "Password" }).click()
     await page.getByTestId("current-password-input").fill(password)
     await page.getByTestId("new-password-input").fill(newPassword)
@@ -162,7 +182,7 @@ test.describe("Change password validation", () => {
 
   test.beforeEach(async ({ page }) => {
     await logInUser(page, email, password)
-    await page.goto("/settings")
+    await page.goto("/account")
     await page.getByRole("tab", { name: "Password" }).click()
   })
 
@@ -203,12 +223,12 @@ test.describe("Change password validation", () => {
 })
 
 test("Appearance button is visible in sidebar", async ({ page }) => {
-  await page.goto("/settings")
+  await page.goto("/admin/settings")
   await expect(page.getByTestId("theme-button")).toBeVisible()
 })
 
 test("User can switch between theme modes", async ({ page }) => {
-  await page.goto("/settings")
+  await page.goto("/admin/settings")
 
   await page.getByTestId("theme-button").click()
   await page.getByTestId("dark-mode").click()
@@ -222,7 +242,7 @@ test("User can switch between theme modes", async ({ page }) => {
 })
 
 test("Selected mode is preserved across sessions", async ({ page }) => {
-  await page.goto("/settings")
+  await page.goto("/admin/settings")
 
   await page.getByTestId("theme-button").click()
   if (
@@ -247,7 +267,9 @@ test("Selected mode is preserved across sessions", async ({ page }) => {
   expect(isDarkMode).toBe(true)
 
   await logOutUser(page)
-  await logInUser(page, firstSuperuser, firstSuperuserPassword)
+  await logInUser(page, firstSuperuser, firstSuperuserPassword, {
+    admin: true,
+  })
 
   isDarkMode = await page.evaluate(() =>
     document.documentElement.classList.contains("dark"),

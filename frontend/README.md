@@ -61,6 +61,35 @@ bun run generate-client
 
 Regenerate the client whenever backend changes affect the OpenAPI schema.
 
+## App Name
+
+The app name shown in page titles, the footer and the logo `alt` text comes from `VITE_APP_NAME` (default: `Ecommerce`). Set it in `frontend/.env`:
+
+```env
+VITE_APP_NAME=My Store
+```
+
+## Routes
+
+The frontend has a public storefront and an admin-only backoffice. The route files live in `frontend/src/routes`.
+
+| Route | Page | Access |
+|---|---|---|
+| `/` | Product catalog (`?category=&page=`) | public |
+| `/search?q=&page=` | Product search | public |
+| `/products/:productId` | Product detail | public |
+| `/account` | Account settings | logged in |
+| `/login?redirect=`, `/signup`, `/recover-password`, `/reset-password` | Auth screens | logged out |
+| `/admin` | Overview | superuser |
+| `/admin/products` | Products CRUD | superuser |
+| `/admin/categories` | Categories CRUD | superuser |
+| `/admin/users` | Users CRUD | superuser |
+| `/admin/settings` | Own account settings | superuser |
+
+After logging in, superusers go to `/admin` and customers go to `/`, unless a safe relative `redirect` search param is present.
+
+All categories are preloaded by the `_store` and `admin` layout routes (`src/lib/queries/categories.ts`), so product pages can show category names without one request per product.
+
 ## Using a Remote API
 
 By default, the built frontend uses the same origin as the FastAPI app. If you want to use a remote API while running the Vite development server, you can set the environment variable `VITE_API_URL` to the URL of the remote API. For example, you can set it in the `frontend/.env` file:
@@ -94,8 +123,10 @@ docker compose up -d --wait backend
 Then, you can run the tests with the following command:
 
 ```bash
-bunx playwright test
+npx bun x playwright test
 ```
+
+The tests log in as the first superuser from the root `.env`, so run `python -m app.initial_data` in the backend container once if the database is empty.
 
 You can also run your tests in UI mode to see the browser and interact with it running:
 
