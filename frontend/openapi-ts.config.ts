@@ -14,7 +14,8 @@ export default defineConfig({
         strategy: "byTags",
         methods: "static",
         containerName: "{{name}}Service",
-        methodName: (name: string): string => name.replace(/^[^-]*-/, ""),
+        // tags use hyphens, operation names use underscores: strip the "<tag>-" prefix
+        methodName: (name: string): string => name.replace(/^.*-/, ""),
       },
     },
   ],
