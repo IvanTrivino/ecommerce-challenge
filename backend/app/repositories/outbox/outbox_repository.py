@@ -23,7 +23,6 @@ def backoff(attempts: int) -> timedelta:
 
 
 class OutboxRepository:
-
     def __init__(self, session: Session) -> None:
         self.session = session
 

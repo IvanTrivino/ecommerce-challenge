@@ -592,6 +592,6 @@ curl -s 'localhost:9200/products/_search?q=name:<word from product name>' | jq '
 
 ## Out of scope (don't build)
 
-- `GET /products/search` or any search query API.
+- Anything beyond `GET /products/search` (FR-1.5): facets, suggestions, highlighting.
 - The bulk importer.
 - `LISTEN/NOTIFY`, metrics endpoints, or a dead-letter UI.

@@ -60,7 +60,13 @@ def test_create_indexes_document(db: Session) -> None:
     result = run()
     source = doc(product.id)
     assert source is not None
-    assert set(source) == {"name", "description", "sku", "category_name", "updated_at"}
+    assert set(source) == {
+        "name",
+        "description",
+        "sku",
+        "category_name",
+        "updated_at",
+    }
     assert source["category_name"] == category.name
     assert (
         result.indexed == 2 - 1

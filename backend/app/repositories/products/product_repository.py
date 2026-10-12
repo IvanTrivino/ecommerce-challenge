@@ -12,6 +12,9 @@ class ProductRepository(BaseRepository[Product]):
     def __init__(self, session: Session) -> None:
         super().__init__(session, Product)
 
+    def get_many(self, ids: Collection[uuid.UUID]) -> Sequence[Product]:
+        return self.session.scalars(self._live().where(Product.id.in_(ids))).all()
+
     def get_by_sku(self, sku: str) -> Product | None:
         return self.session.scalars(self._live().where(Product.sku == sku)).first()
 

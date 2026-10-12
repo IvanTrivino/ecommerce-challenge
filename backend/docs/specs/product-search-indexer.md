@@ -30,7 +30,6 @@ The API never talks to ES when writing data. If ES is unavailable, writes still 
 
 ### Non-goals
 
-- A search API endpoint (`GET /products/search`). That is a follow-up spec.
 - The bulk importer itself. This spec only defines how it must emit outbox events (FR-2.4).
 - Delivering events to consumers other than the search indexer. The outbox table is generic so this can be added later.
 - Searching on price, stock, weight or dates.
@@ -62,6 +61,7 @@ The API never talks to ES when writing data. If ES is unavailable, writes still 
 
 - **FR-1.3** The mapping uses `"dynamic": "strict"`. ES rejects any field not listed in FR-1.2.
 - **FR-1.4** Search results return product IDs only. A consumer gets the full product data from Postgres.
+- **FR-1.5** `GET /products/search` is the only way clients search. It queries the alias with a `multi_match` over `name`, `description`, `sku` and `category_name`, then loads the live products from Postgres in ranking order. Elasticsearch is never exposed to clients.
 
 ### FR-2 Emitting outbox events
 
@@ -245,7 +245,6 @@ Each criterion is covered by an automated test. Worker tests run against the rea
 
 ## 12. Future work
 
-- `GET /products/search`: query ES for IDs, then load the products from Postgres.
 - The bulk importer, emitting events per FR-2.4.
 - Optional Postgres `LISTEN/NOTIFY` to wake the indexer early, with polling kept as the fallback.
 - Other outbox consumers, through new topics.

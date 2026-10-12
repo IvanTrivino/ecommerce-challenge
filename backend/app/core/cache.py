@@ -23,7 +23,6 @@ def get_cache() -> Redis:
 
 
 class CacheNamespace:
-
     def __init__(self, name: str, *, ttl: int = 300, jitter: float = 0.1) -> None:
         if not 0 <= jitter < 1:
             raise ValueError("jitter must be in [0, 1)")
@@ -41,10 +40,16 @@ class CacheNamespace:
         return str(version)
 
     def key(self, func: Callable[..., Any], arguments: dict[str, Any]) -> str:
-        digest = hashlib.sha256(
-            json.dumps(arguments, sort_keys=True, default=str).encode()
-        ).hexdigest()[:16]
-        return f"cache:{self.name}:{self._version()}:{func.__qualname__}:{digest}"
+        return self.keys(func, [arguments])[0]
+
+    def keys(
+        self, func: Callable[..., Any], arguments: list[dict[str, Any]]
+    ) -> list[str]:
+        prefix = f"cache:{self.name}:{self._version()}:{func.__qualname__}"
+        return [
+            f"{prefix}:{hashlib.sha256(json.dumps(a, sort_keys=True, default=str).encode()).hexdigest()[:16]}"
+            for a in arguments
+        ]
 
     def expiry(self, ttl: int | None = None) -> int:
         base = ttl or self.ttl

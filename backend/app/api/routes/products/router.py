@@ -1,9 +1,13 @@
 import uuid
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
-from app.api.deps import ProductServiceDep, get_current_active_superuser
+from app.api.deps import (
+    ProductSearchServiceDep,
+    ProductServiceDep,
+    get_current_active_superuser,
+)
 from app.schemas import (
     Message,
     ProductCreate,
@@ -25,6 +29,16 @@ def read_products(
     limit: int = 100,
 ) -> Any:
     return service.list_products(category_id=category_uuid, skip=skip, limit=limit)
+
+
+@router.get("/search", response_model=ProductsPublic)
+def search_products(
+    service: ProductSearchServiceDep,
+    q: Annotated[str, Query(min_length=1, max_length=200)],
+    skip: Annotated[int, Query(ge=0, le=10_000)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> Any:
+    return service.search(q, skip=skip, limit=limit)
 
 
 @router.get("/{product_id}", response_model=ProductPublic)

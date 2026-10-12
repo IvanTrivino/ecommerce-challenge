@@ -156,7 +156,7 @@ def process_once(session: Session, es: Elasticsearch) -> BatchResult:
         select(func.pg_try_advisory_xact_lock_shared(INDEXER_LOCK_KEY))
     ):
         session.rollback()
-        return result 
+        return result
 
     outbox = OutboxRepository(session)
     events = outbox.claim_batch(settings.SEARCH_OUTBOX_BATCH_SIZE)

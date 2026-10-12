@@ -12,6 +12,9 @@ class FakeRedis:
     def get(self, key: str) -> str | bytes | None:
         return self.data.get(key)
 
+    def mget(self, keys: list[str]) -> list[str | bytes | None]:
+        return [self.data.get(key) for key in keys]
+
     def set(
         self, key: str, value: str | bytes, nx: bool = False, ex: int | None = None
     ) -> None:
