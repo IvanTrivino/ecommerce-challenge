@@ -8,6 +8,7 @@ import {
 } from "../../src/client"
 import { client } from "../../src/client/client.gen"
 import { firstSuperuser, firstSuperuserPassword } from "../config"
+import { PNG_1PX } from "./images"
 import {
   randomCategoryName,
   randomProductName,
@@ -98,4 +99,23 @@ export const deleteProductsInCategory = async (categoryId: string) => {
     query: { category_uuid: categoryId, limit: 100 },
   })
   for (const product of data.data) await deleteProduct(product.id)
+}
+
+// Uploads a real image to storage and returns its key, for `image_key`
+export const uploadProductImage = async (
+  body: Buffer = PNG_1PX,
+  contentType: "image/jpeg" | "image/png" | "image/webp" = "image/png",
+) => {
+  await asAdmin()
+  const { data } = await ProductsService.presignProductImage({
+    body: { content_type: contentType, size: body.length },
+  })
+  const form = new FormData()
+  for (const [name, value] of Object.entries(data.fields))
+    form.append(name, value)
+  form.append("file", new Blob([new Uint8Array(body)], { type: contentType }))
+  const res = await fetch(data.url, { method: "POST", body: form })
+  if (!res.ok)
+    throw new Error(`Upload failed: ${res.status} ${await res.text()}`)
+  return data.key
 }
