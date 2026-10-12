@@ -1,6 +1,7 @@
 {
   "name": "fastapi-full-stack-template",
   "private": true,
+  "packageManager": "bun@1.4.3",
   "workspaces": [
     "frontend",
     "packages/*"
@@ -12,5 +13,11 @@
     "test:ui": "bun run --filter frontend test:ui",
     "email:dev": "bun run --filter emails dev",
     "email:export": "bun run --filter emails export"
-  }
+  },
+  "devDependencies": {
+    "bun": "1.4.3"
+  },
+  "trustedDependencies": [
+    "bun"
+  ]
 }

@@ -54,7 +54,7 @@ The Python environment lives in the container. For autocomplete and type checkin
 
 ### Frontend
 
-The frontend is developed separately. From the project root:
+The frontend is developed separately. Bun is installed as a dev dependency: bootstrap it once with `npx -y bun@1.4.3 install`, then use `npx bun …`. From the project root:
 
 ```bash
 bun install

@@ -4,7 +4,7 @@ The frontend is built with [Vite](https://vitejs.dev/), [React](https://react.de
 
 ## Requirements
 
-- [Bun](https://bun.sh/)
+- [Bun](https://bun.sh/) (installed as a dev dependency; bootstrap once with `npx -y bun@1.4.3 install`, then use `npx bun …`)
 
 ## Quick Start
 
