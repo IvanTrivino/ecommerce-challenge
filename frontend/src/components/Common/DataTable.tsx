@@ -14,6 +14,7 @@ import {
   ChevronsRight,
 } from "lucide-react"
 
+import { PaginationBar } from "@/components/Store/PaginationBar"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -38,19 +39,33 @@ const dataTableFeatures = tableFeatures({
 
 export type DataTableFeatures = typeof dataTableFeatures
 
+interface ServerPagination {
+  page: number
+  pageSize: number
+  total: number
+  onPageChange: (page: number) => void
+}
+
 interface DataTableProps<TData extends RowData> {
   columns: ColumnDef<DataTableFeatures, TData>[]
   data: TData[]
+  // when set, rows are already paged by the server: render them all
+  pagination?: ServerPagination
 }
 
 export function DataTable<TData extends RowData>({
   columns,
   data,
+  pagination,
 }: DataTableProps<TData>) {
   const table = useTable({
     features: dataTableFeatures,
     data,
     columns,
+    // a page as large as the data makes the client-side paging a no-op
+    ...(pagination && {
+      state: { pagination: { pageIndex: 0, pageSize: data.length || 1 } },
+    }),
   })
 
   return (
@@ -98,7 +113,9 @@ export function DataTable<TData extends RowData>({
         </TableBody>
       </Table>
 
-      {table.getPageCount() > 1 && (
+      {pagination && <PaginationBar {...pagination} />}
+
+      {!pagination && table.getPageCount() > 1 && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border-t bg-muted/20">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="text-sm text-muted-foreground">

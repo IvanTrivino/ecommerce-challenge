@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
+import { createFileRoute, Outlet } from "@tanstack/react-router"
 
 import { Footer } from "@/components/Common/Footer"
 import AppSidebar from "@/components/Sidebar/AppSidebar"
@@ -7,17 +7,14 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { isLoggedIn } from "@/lib/auth"
+import { requireSuperuser } from "@/lib/auth"
+import { categoriesQueryOptions } from "@/lib/queries/categories"
 
-export const Route = createFileRoute("/_layout")({
+export const Route = createFileRoute("/admin")({
   component: Layout,
-  beforeLoad: async () => {
-    if (!isLoggedIn()) {
-      throw redirect({
-        to: "/login",
-      })
-    }
-  },
+  beforeLoad: ({ location }) => requireSuperuser(location),
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(categoriesQueryOptions),
 })
 
 function Layout() {

@@ -1,45 +1,26 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 import { Suspense } from "react"
 
-import { type UserPublic, UsersService } from "@/client"
+import type { UserPublic } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
 import { columns, type UserTableData } from "@/components/Admin/columns"
 import { DataTable } from "@/components/Common/DataTable"
 import PendingUsers from "@/components/Pending/PendingUsers"
 import { pageTitle } from "@/config"
 import useAuth from "@/hooks/useAuth"
+import { usersQueryOptions } from "@/lib/queries/users"
 
-function getUsersQueryOptions() {
-  return {
-    queryFn: async () =>
-      (await UsersService.readUsers({ query: { skip: 0, limit: 100 } })).data,
-    queryKey: ["users"],
-  }
-}
-
-export const Route = createFileRoute("/_layout/admin")({
-  component: Admin,
-  beforeLoad: async () => {
-    const { data: user } = await UsersService.readUserMe()
-    if (!user.is_superuser) {
-      throw redirect({
-        to: "/",
-      })
-    }
-  },
+export const Route = createFileRoute("/admin/users")({
+  component: Users,
   head: () => ({
-    meta: [
-      {
-        title: pageTitle("Admin"),
-      },
-    ],
+    meta: [{ title: pageTitle("Users") }],
   }),
 })
 
 function UsersTableContent() {
   const { user: currentUser } = useAuth()
-  const { data: users } = useSuspenseQuery(getUsersQueryOptions())
+  const { data: users } = useSuspenseQuery(usersQueryOptions)
 
   const tableData: UserTableData[] = users.data.map((user: UserPublic) => ({
     ...user,
@@ -57,7 +38,7 @@ function UsersTable() {
   )
 }
 
-function Admin() {
+function Users() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
