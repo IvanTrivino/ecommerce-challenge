@@ -91,6 +91,22 @@ $ docker compose exec backend python app/initial_data.py
 
 Changing the variables later doesn't update an existing superuser; change their password through the API instead.
 
+## Search Indexer
+
+Product changes reach Elasticsearch through a transactional outbox: a SQLAlchemy `before_flush` listener writes an `outbox_event` row in the same transaction as the change, and the `search-indexer` service consumes those events and syncs the `products` index. The API never talks to Elasticsearch when writing. See the [spec](docs/specs/product-search-indexer.md).
+
+Everything the service does can also be run by hand with `python -m app.search <command>`:
+
+```console
+$ docker compose exec backend python -m app.search status          # backlog, failed events, index and document counts
+$ docker compose exec backend python -m app.search process --drain # process pending events until none are left
+$ docker compose exec backend python -m app.search enqueue <product-uuid>...
+$ docker compose exec backend python -m app.search retry-failed    # put failed events back to pending
+$ docker compose exec backend python -m app.search reindex         # full rebuild with an atomic alias swap
+```
+
+Run `reindex` once on the first deploy to load the products that already exist. Writes that skip the ORM flush (Core `insert()`/`update()`, `COPY`, raw SQL) must call `OutboxRepository.add_many` in the same transaction.
+
 ## Email Templates
 
 The email templates are written with [React Email](https://react.email) in `./packages/react-email/`. The `emails` directory holds one component per email and the `ui` directory holds the shared components (layout, heading, button, link, callout).

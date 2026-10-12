@@ -9,8 +9,14 @@ def get_datetime_utc() -> datetime:
     return datetime.now(UTC)
 
 
-class Base(DeclarativeBase):
-    """Declarative base for all ORM models, with the columns every table shares."""
+class ModelBase(DeclarativeBase):
+    """Declarative base that only holds the metadata"""
+
+
+class Base(ModelBase):
+    """Abstract base for domain models, with audit columns"""
+
+    __abstract__ = True
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     is_deleted: Mapped[bool] = mapped_column(

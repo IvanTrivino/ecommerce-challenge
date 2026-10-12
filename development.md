@@ -4,7 +4,7 @@
 
 Everything runs in Docker Compose, using `compose.dev.yml`. The root `.env` sets `COMPOSE_FILE=compose.dev.yml`, so plain `docker compose` commands use it.
 
-From the project root, start the whole stack (backend, Celery, Postgres, Redis, Elasticsearch, RustFS, Mailpit, Adminer):
+From the project root, start the whole stack (backend, Celery, search indexer, Postgres, Redis, Elasticsearch, RustFS, Mailpit, Adminer):
 
 ```bash
 docker compose up -d

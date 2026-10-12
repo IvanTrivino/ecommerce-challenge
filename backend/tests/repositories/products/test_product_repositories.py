@@ -66,3 +66,40 @@ def test_category_has_products_ignores_deleted_products(db: Session) -> None:
     assert repo.has_products(category.id) is True
     ProductRepository(db).delete(product)
     assert repo.has_products(category.id) is False
+
+
+def test_get_many_with_category_includes_deleted(db: Session) -> None:
+    live = create_random_product(db)
+    deleted = create_random_product(db)
+    ProductRepository(db).delete(deleted)
+    rows = ProductRepository(db).get_many_with_category([live.id, deleted.id])
+    assert {p.id for p, _ in rows} == {live.id, deleted.id}
+    assert all(c.id == p.category_uuid for p, c in rows)
+
+
+def test_list_ids_by_category_includes_deleted(db: Session) -> None:
+    category = create_random_category(db)
+    live = create_random_product(db, category)
+    deleted = create_random_product(db, category)
+    ProductRepository(db).delete(deleted)
+    other = create_random_product(db)
+    ids = ProductRepository(db).list_ids_by_category([category.id])
+    assert set(ids) == {live.id, deleted.id}
+    assert other.id not in ids
+
+
+def test_iter_indexable_skips_deleted_products_and_categories(db: Session) -> None:
+    repo = ProductRepository(db)
+    category = create_random_category(db)
+    live = create_random_product(db, category)
+    deleted = create_random_product(db, category)
+    repo.delete(deleted)
+    dead_category = create_random_category(db)
+    in_dead_category = create_random_product(db, dead_category)
+    ProductCategoryRepository(db).delete(dead_category)
+
+    ids = {p.id for p, _ in repo.iter_indexable(10)}
+    assert live.id in ids
+    assert deleted.id not in ids
+    assert in_dead_category.id not in ids
+    assert repo.count_indexable() == len(ids)

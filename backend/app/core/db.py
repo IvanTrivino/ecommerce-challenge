@@ -3,6 +3,7 @@ from collections.abc import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+import app.outbox.listeners  # noqa: F401  (registers SQLAlchemy listeners)
 from app.core.config import settings
 from app.repositories import UserRepository
 from app.schemas import UserCreate

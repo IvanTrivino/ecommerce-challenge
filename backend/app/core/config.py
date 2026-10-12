@@ -56,6 +56,11 @@ class Settings(BaseSettings):
 
     ELASTICSEARCH_URL: str = "http://localhost:9200"
     ELASTICSEARCH_API_KEY: str | None = None
+    ELASTICSEARCH_PRODUCTS_ALIAS: str = "products"
+    SEARCH_OUTBOX_POLL_SECONDS: float = 2
+    SEARCH_OUTBOX_BATCH_SIZE: int = 500
+    SEARCH_OUTBOX_MAX_ATTEMPTS: int = 10
+    SEARCH_OUTBOX_RETENTION_DAYS: int = 7
 
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False

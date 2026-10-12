@@ -9,10 +9,10 @@ config = context.config
 assert config.config_file_name is not None
 fileConfig(config.config_file_name)
 
-from app.models import Base  # noqa
+from app.models import ModelBase  # noqa
 from app.core.config import settings # noqa
 
-target_metadata = Base.metadata
+target_metadata = ModelBase.metadata
 
 def get_url():
     return str(settings.DATABASE_URL)
