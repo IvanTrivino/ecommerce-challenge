@@ -29,7 +29,8 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Form } from "@/components/ui/form"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
-import { applyConflictError } from "@/lib/formErrors"
+import { useProductImageUpload } from "@/hooks/useProductImageUpload"
+import { applyConflictError, applyImageError } from "@/lib/formErrors"
 import { productKeys } from "@/lib/queries/products"
 import { handleError } from "@/utils"
 
@@ -55,8 +56,24 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
       stock: String(product.stock ?? 0),
       weight: product.weight ?? "",
       description: product.description ?? "",
+      image_key: product.image_key ?? "",
     },
   })
+
+  const upload = useProductImageUpload((key) =>
+    form.setValue("image_key", key, {
+      shouldDirty: true,
+      shouldValidate: true,
+    }),
+  )
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      upload.reset()
+      form.reset()
+    }
+    setIsOpen(open)
+  }
 
   // read during render so react-hook-form tracks it
   const { dirtyFields } = form.formState
@@ -69,6 +86,7 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
       }),
     onSuccess: () => {
       showSuccessToast("Product updated successfully")
+      upload.reset()
       form.reset(form.getValues())
       setIsOpen(false)
       onSuccess()
@@ -81,7 +99,8 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
         /sku/i,
         "A product with this SKU already exists",
       )
-      if (!handled) handleError.call(showErrorToast, err)
+      if (!handled && !applyImageError(err, form))
+        handleError.call(showErrorToast, err)
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: productKeys.all })
@@ -98,7 +117,7 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DropdownMenuItem
         onSelect={(e) => e.preventDefault()}
         onClick={() => setIsOpen(true)}
@@ -116,7 +135,12 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <ProductFormFields form={form} />
+              <ProductFormFields
+                form={form}
+                upload={upload}
+                currentImageUrl={product.image_url ?? null}
+                savedImageKey={product.image_key ?? ""}
+              />
             </div>
 
             <DialogFooter>
@@ -129,7 +153,11 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
                   Cancel
                 </Button>
               </DialogClose>
-              <LoadingButton type="submit" loading={mutation.isPending}>
+              <LoadingButton
+                type="submit"
+                loading={mutation.isPending}
+                disabled={upload.isUploading}
+              >
                 Save
               </LoadingButton>
             </DialogFooter>

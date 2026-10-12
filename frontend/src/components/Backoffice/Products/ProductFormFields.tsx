@@ -1,5 +1,6 @@
 import type { UseFormReturn } from "react-hook-form"
 
+import { ProductImageField } from "@/components/Backoffice/Products/ProductImageField"
 import type { ProductFormValues } from "@/components/Backoffice/Products/productSchema"
 import {
   FormControl,
@@ -18,18 +19,31 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useCategories } from "@/hooks/useCategories"
+import type { useProductImageUpload } from "@/hooks/useProductImageUpload"
 
 const Required = () => <span className="text-destructive">*</span>
 
 export function ProductFormFields({
   form,
+  upload,
+  currentImageUrl,
+  savedImageKey,
 }: {
   form: UseFormReturn<ProductFormValues>
+  upload: ReturnType<typeof useProductImageUpload>
+  currentImageUrl: string | null
+  savedImageKey: string
 }) {
   const { categories } = useCategories()
 
   return (
     <>
+      <ProductImageField
+        form={form}
+        upload={upload}
+        currentImageUrl={currentImageUrl}
+        savedImageKey={savedImageKey}
+      />
       <FormField
         control={form.control}
         name="name"

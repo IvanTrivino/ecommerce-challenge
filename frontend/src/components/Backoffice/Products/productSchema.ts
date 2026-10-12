@@ -20,6 +20,8 @@ export const productSchema = z.object({
       "Enter a weight > 0 with up to 3 decimals",
     ),
   description: z.string(),
+  // "" means no image
+  image_key: z.string(),
 })
 
 export type ProductFormValues = z.infer<typeof productSchema>
@@ -32,6 +34,7 @@ export const toCreateBody = (v: ProductFormValues): ProductCreate => ({
   stock: Number(v.stock),
   weight: v.weight.trim() || null,
   description: v.description.trim() || null,
+  image_key: v.image_key || null,
 })
 
 export function toUpdateBody(

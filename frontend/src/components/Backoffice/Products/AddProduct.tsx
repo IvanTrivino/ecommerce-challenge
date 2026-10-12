@@ -32,7 +32,8 @@ import {
 } from "@/components/ui/tooltip"
 import { useCategories } from "@/hooks/useCategories"
 import useCustomToast from "@/hooks/useCustomToast"
-import { applyConflictError } from "@/lib/formErrors"
+import { useProductImageUpload } from "@/hooks/useProductImageUpload"
+import { applyConflictError, applyImageError } from "@/lib/formErrors"
 import { productKeys } from "@/lib/queries/products"
 import { handleError } from "@/utils"
 
@@ -44,6 +45,7 @@ const emptyValues: ProductFormValues = {
   stock: "0",
   weight: "",
   description: "",
+  image_key: "",
 }
 
 const AddProduct = () => {
@@ -59,11 +61,27 @@ const AddProduct = () => {
     defaultValues: emptyValues,
   })
 
+  const upload = useProductImageUpload((key) =>
+    form.setValue("image_key", key, {
+      shouldDirty: true,
+      shouldValidate: true,
+    }),
+  )
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      upload.reset()
+      form.reset(emptyValues)
+    }
+    setIsOpen(open)
+  }
+
   const mutation = useMutation({
     mutationFn: (data: ProductCreate) =>
       ProductsService.createProduct({ body: data }),
     onSuccess: () => {
       showSuccessToast("Product created successfully")
+      upload.reset()
       form.reset(emptyValues)
       setIsOpen(false)
     },
@@ -75,7 +93,8 @@ const AddProduct = () => {
         /sku/i,
         "A product with this SKU already exists",
       )
-      if (!handled) handleError.call(showErrorToast, err)
+      if (!handled && !applyImageError(err, form))
+        handleError.call(showErrorToast, err)
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: productKeys.all })
@@ -105,7 +124,7 @@ const AddProduct = () => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus className="mr-2" />
@@ -122,7 +141,12 @@ const AddProduct = () => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <div className="grid gap-4 py-4">
-              <ProductFormFields form={form} />
+              <ProductFormFields
+                form={form}
+                upload={upload}
+                currentImageUrl={null}
+                savedImageKey=""
+              />
             </div>
 
             <DialogFooter>
@@ -135,7 +159,11 @@ const AddProduct = () => {
                   Cancel
                 </Button>
               </DialogClose>
-              <LoadingButton type="submit" loading={mutation.isPending}>
+              <LoadingButton
+                type="submit"
+                loading={mutation.isPending}
+                disabled={upload.isUploading}
+              >
                 Save
               </LoadingButton>
             </DialogFooter>
