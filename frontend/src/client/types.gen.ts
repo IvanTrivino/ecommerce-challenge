@@ -164,6 +164,56 @@ export type ProductCreate = {
      * Weight
      */
     weight?: number | string | null;
+    /**
+     * Image Key
+     */
+    image_key?: string | null;
+};
+
+/**
+ * ProductImageUpload
+ */
+export type ProductImageUpload = {
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Fields
+     */
+    fields: {
+        [key: string]: string;
+    };
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Image Url
+     */
+    image_url: string;
+    /**
+     * Max Bytes
+     */
+    max_bytes: number;
+    /**
+     * Expires In
+     */
+    expires_in: number;
+};
+
+/**
+ * ProductImageUploadRequest
+ */
+export type ProductImageUploadRequest = {
+    /**
+     * Content Type
+     */
+    content_type: 'image/jpeg' | 'image/png' | 'image/webp';
+    /**
+     * Size
+     */
+    size: number;
 };
 
 /**
@@ -199,6 +249,10 @@ export type ProductPublic = {
      */
     weight?: string | null;
     /**
+     * Image Key
+     */
+    image_key?: string | null;
+    /**
      * Id
      */
     id: string;
@@ -206,6 +260,10 @@ export type ProductPublic = {
      * Created At
      */
     created_at: string;
+    /**
+     * Image Url
+     */
+    readonly image_url: string | null;
 };
 
 /**
@@ -240,6 +298,10 @@ export type ProductUpdate = {
      * Weight
      */
     weight?: number | string | null;
+    /**
+     * Image Key
+     */
+    image_key?: string | null;
 };
 
 /**
@@ -440,6 +502,66 @@ export type ValidationError = {
     ctx?: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * ProductPublic
+ */
+export type ProductPublicWritable = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Sku
+     */
+    sku: string;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Category Uuid
+     */
+    category_uuid: string;
+    /**
+     * Price
+     */
+    price: string;
+    /**
+     * Stock
+     */
+    stock?: number;
+    /**
+     * Weight
+     */
+    weight?: string | null;
+    /**
+     * Image Key
+     */
+    image_key?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
+ * ProductsPublic
+ */
+export type ProductsPublicWritable = {
+    /**
+     * Data
+     */
+    data: Array<ProductPublicWritable>;
+    /**
+     * Count
+     */
+    count: number;
 };
 
 export type loginLoginAccessTokenData = {
@@ -894,6 +1016,31 @@ export type productsSearchProductsResponses = {
 };
 
 export type productsSearchProductsResponse = productsSearchProductsResponses[keyof productsSearchProductsResponses];
+
+export type productsPresignProductImageData = {
+    body: ProductImageUploadRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/products/images/presign';
+};
+
+export type productsPresignProductImageErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type productsPresignProductImageError = productsPresignProductImageErrors[keyof productsPresignProductImageErrors];
+
+export type productsPresignProductImageResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProductImageUpload;
+};
+
+export type productsPresignProductImageResponse = productsPresignProductImageResponses[keyof productsPresignProductImageResponses];
 
 export type productsDeleteProductData = {
     body?: never;

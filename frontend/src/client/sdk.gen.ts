@@ -2,7 +2,7 @@
 
 import { type Client, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, productCategoriesCreateCategoryData, productCategoriesCreateCategoryErrors, productCategoriesCreateCategoryResponses, productCategoriesDeleteCategoryData, productCategoriesDeleteCategoryErrors, productCategoriesDeleteCategoryResponses, productCategoriesReadCategoriesData, productCategoriesReadCategoriesErrors, productCategoriesReadCategoriesResponses, productCategoriesReadCategoryData, productCategoriesReadCategoryErrors, productCategoriesReadCategoryResponses, productCategoriesUpdateCategoryData, productCategoriesUpdateCategoryErrors, productCategoriesUpdateCategoryResponses, productsCreateProductData, productsCreateProductErrors, productsCreateProductResponses, productsDeleteProductData, productsDeleteProductErrors, productsDeleteProductResponses, productsReadProductData, productsReadProductErrors, productsReadProductResponses, productsReadProductsData, productsReadProductsErrors, productsReadProductsResponses, productsSearchProductsData, productsSearchProductsErrors, productsSearchProductsResponses, productsUpdateProductData, productsUpdateProductErrors, productsUpdateProductResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
+import type { loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, productCategoriesCreateCategoryData, productCategoriesCreateCategoryErrors, productCategoriesCreateCategoryResponses, productCategoriesDeleteCategoryData, productCategoriesDeleteCategoryErrors, productCategoriesDeleteCategoryResponses, productCategoriesReadCategoriesData, productCategoriesReadCategoriesErrors, productCategoriesReadCategoriesResponses, productCategoriesReadCategoryData, productCategoriesReadCategoryErrors, productCategoriesReadCategoryResponses, productCategoriesUpdateCategoryData, productCategoriesUpdateCategoryErrors, productCategoriesUpdateCategoryResponses, productsCreateProductData, productsCreateProductErrors, productsCreateProductResponses, productsDeleteProductData, productsDeleteProductErrors, productsDeleteProductResponses, productsPresignProductImageData, productsPresignProductImageErrors, productsPresignProductImageResponses, productsReadProductData, productsReadProductErrors, productsReadProductResponses, productsReadProductsData, productsReadProductsErrors, productsReadProductsResponses, productsSearchProductsData, productsSearchProductsErrors, productsSearchProductsResponses, productsUpdateProductData, productsUpdateProductErrors, productsUpdateProductResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -279,6 +279,22 @@ export class ProductsService {
             responseType: 'json',
             url: '/api/v1/products/search',
             ...options
+        });
+    }
+    
+    /**
+     * Presign Product Image
+     */
+    public static presignProductImage<ThrowOnError extends boolean = true>(options: Options<productsPresignProductImageData, ThrowOnError>) {
+        return (options.client ?? client).post<productsPresignProductImageResponses, productsPresignProductImageErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/products/images/presign',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
         });
     }
     
