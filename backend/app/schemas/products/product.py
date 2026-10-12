@@ -2,7 +2,9 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
+
+from app.core.storage import product_image_url
 
 
 class ProductBase(BaseModel):
@@ -13,6 +15,7 @@ class ProductBase(BaseModel):
     price: Decimal = Field(ge=0, max_digits=10, decimal_places=2)
     stock: int = Field(default=0, ge=0)
     weight: Decimal | None = Field(default=None, gt=0, max_digits=10, decimal_places=3)
+    image_key: str | None = Field(default=None, max_length=512)
 
 
 class ProductCreate(ProductBase):
@@ -27,6 +30,7 @@ class ProductUpdate(BaseModel):
     price: Decimal | None = Field(default=None, ge=0, max_digits=10, decimal_places=2)
     stock: int | None = Field(default=None, ge=0)
     weight: Decimal | None = Field(default=None, gt=0, max_digits=10, decimal_places=3)
+    image_key: str | None = Field(default=None, max_length=512)
 
 
 class ProductPublic(ProductBase):
@@ -34,6 +38,11 @@ class ProductPublic(ProductBase):
 
     id: uuid.UUID
     created_at: datetime
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def image_url(self) -> str | None:
+        return product_image_url(self.image_key) if self.image_key else None
 
 
 class ProductsPublic(BaseModel):

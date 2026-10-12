@@ -6,16 +6,21 @@ from app.models import Product
 from app.repositories import ProductCategoryRepository, ProductRepository
 from app.schemas import ProductCreate, ProductPublic, ProductsPublic, ProductUpdate
 from app.services.products.cache import PRODUCTS
+from app.services.products.product_image_service import ProductImageService
 
-NULLABLE_FIELDS = {"description", "weight"}
+NULLABLE_FIELDS = {"description", "weight", "image_key"}
 
 
 class ProductService:
     def __init__(
-        self, repo: ProductRepository, category_repo: ProductCategoryRepository
+        self,
+        repo: ProductRepository,
+        category_repo: ProductCategoryRepository,
+        images: ProductImageService | None = None,
     ) -> None:
         self.repo = repo
         self.category_repo = category_repo
+        self.images = images or ProductImageService(repo)
 
     @cached(PRODUCTS, ProductPublic)
     def get_by_id(self, product_id: uuid.UUID) -> ProductPublic:
@@ -37,6 +42,8 @@ class ProductService:
     def create_product(self, product_in: ProductCreate) -> Product:
         self._ensure_sku_available(product_in.sku)
         self._ensure_category_exists(product_in.category_uuid)
+        if product_in.image_key:
+            self.images.verify(product_in.image_key)
         return self.repo.save(Product(**product_in.model_dump()))
 
     @invalidates(PRODUCTS)
@@ -53,6 +60,9 @@ class ProductService:
             self._ensure_sku_available(data["sku"], product_id)
         if "category_uuid" in data:
             self._ensure_category_exists(data["category_uuid"])
+        new_key = data.get("image_key")
+        if new_key and new_key != product.image_key:
+            self.images.verify(new_key)
         for field, value in data.items():
             setattr(product, field, value)
         return self.repo.save(product)

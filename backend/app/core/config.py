@@ -53,6 +53,12 @@ class Settings(BaseSettings):
     S3_BUCKET: str = "ecommerce"
     # "path" is required by most self-hosted stores, use "virtual" for AWS S3
     S3_ADDRESSING_STYLE: Literal["path", "virtual", "auto"] = "path"
+    S3_PRODUCT_IMAGES_BUCKET: str = "product-images"
+    S3_PRODUCT_IMAGES_PUBLIC_URL: str | None = None
+    PRODUCT_IMAGE_MAX_BYTES: int = 5 * 1024 * 1024
+    PRODUCT_IMAGE_UPLOAD_EXPIRES_SECONDS: int = 300
+    PRODUCT_IMAGE_ORPHAN_GRACE_HOURS: int = 24
+    S3_CA_BUNDLE: str | None = None
 
     ELASTICSEARCH_URL: str = "http://localhost:9200"
     ELASTICSEARCH_API_KEY: str | None = None

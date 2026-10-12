@@ -29,4 +29,8 @@ celery_app.conf.beat_schedule = {
         "task": "app.tasks.heartbeat",
         "schedule": crontab(minute="*"),
     },
+    "sweep-product-images-daily": {
+        "task": "app.tasks.sweep_product_images",
+        "schedule": crontab(hour=3, minute=30),
+    },
 }

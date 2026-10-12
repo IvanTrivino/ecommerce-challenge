@@ -2,13 +2,23 @@ import uuid
 from decimal import Decimal
 
 import pytest
+from botocore.exceptions import EndpointConnectionError
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import ConflictError, NotFoundError
+from app.core.config import settings
+from app.core.exceptions import (
+    BadRequestError,
+    ConflictError,
+    NotFoundError,
+    ServiceUnavailableError,
+)
+from app.core.storage import delete_objects, get_s3, product_images_public_url
 from app.repositories import ProductCategoryRepository, ProductRepository
-from app.schemas import ProductCreate, ProductUpdate
+from app.schemas import ProductCreate, ProductPublic, ProductUpdate
 from app.services import ProductService
+from app.services.products import product_image_service
 from tests.utils.product import create_random_category, create_random_product
+from tests.utils.storage import JPEG_HEADER, PNG_1PX, upload_image
 from tests.utils.utils import random_lower_string
 
 
@@ -114,3 +124,124 @@ def test_write_invalidates_cached_reads(db: Session) -> None:
     assert service.get_by_id(product.id).name == product.name  # fills the cache
     service.update_product(product.id, ProductUpdate(name="renamed"))
     assert service.get_by_id(product.id).name == "renamed"
+
+
+def _png_key() -> str:
+    return f"products/{uuid.uuid4()}.png"
+
+
+@pytest.mark.usefixtures("images_bucket")
+def test_create_product_with_uploaded_image(db: Session) -> None:
+    key = upload_image()
+    category = create_random_category(db)
+    product = _service(db).create_product(
+        _product_in(category.id).model_copy(update={"image_key": key})
+    )
+    assert product.image_key == key
+    assert ProductPublic.model_validate(product).image_url == (
+        f"{product_images_public_url()}/{key}"
+    )
+
+
+def _create_with_key(db: Session, key: str) -> None:
+    category = create_random_category(db)
+    with pytest.raises(BadRequestError) as exc:
+        _service(db).create_product(
+            _product_in(category.id).model_copy(update={"image_key": key})
+        )
+    raise exc.value
+
+
+@pytest.mark.usefixtures("images_bucket")
+@pytest.mark.parametrize(
+    ("key", "detail"),
+    [
+        ("nope.png", "Invalid image key"),
+        (f"products/{uuid.uuid4()}.png", "Image upload not found"),
+    ],
+)
+def test_create_product_rejects_bad_keys(db: Session, key: str, detail: str) -> None:
+    with pytest.raises(BadRequestError, match=detail):
+        _create_with_key(db, key)
+
+
+@pytest.mark.usefixtures("images_bucket")
+def test_create_product_rejects_wrong_signature(db: Session) -> None:
+    key = upload_image(JPEG_HEADER, "image/png")
+    with pytest.raises(BadRequestError, match="File is not a valid image"):
+        _create_with_key(db, key)
+
+
+def test_create_product_rejects_type_mismatch(db: Session, images_bucket: str) -> None:
+    key = _png_key()
+    get_s3().put_object(
+        Bucket=images_bucket, Key=key, Body=PNG_1PX, ContentType="image/jpeg"
+    )
+    with pytest.raises(BadRequestError, match="Image type does not match"):
+        _create_with_key(db, key)
+
+
+@pytest.mark.usefixtures("images_bucket")
+def test_create_product_rejects_oversized_image(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    key = upload_image()
+    monkeypatch.setattr(settings, "PRODUCT_IMAGE_MAX_BYTES", len(PNG_1PX) - 1)
+    with pytest.raises(BadRequestError, match="MB or smaller"):
+        _create_with_key(db, key)
+
+
+@pytest.mark.usefixtures("images_bucket")
+def test_failed_image_check_creates_nothing(db: Session) -> None:
+    category = create_random_category(db)
+    product_in = _product_in(category.id).model_copy(update={"image_key": _png_key()})
+    with pytest.raises(BadRequestError):
+        _service(db).create_product(product_in)
+    assert ProductRepository(db).get_by_sku(product_in.sku) is None
+
+
+@pytest.mark.usefixtures("images_bucket")
+def test_update_sets_replaces_and_clears_the_image(db: Session) -> None:
+    product = create_random_product(db)
+    service = _service(db)
+    key = upload_image()
+
+    assert (
+        service.update_product(product.id, ProductUpdate(image_key=key)).image_key
+        == key
+    )
+    assert service.update_product(product.id, ProductUpdate(stock=1)).image_key == key
+    assert (
+        service.update_product(product.id, ProductUpdate(image_key=None)).image_key
+        is None
+    )
+
+
+def test_update_with_the_same_key_skips_the_storage_check(
+    db: Session, images_bucket: str
+) -> None:
+    product = create_random_product(db)
+    service = _service(db)
+    key = upload_image()
+    service.update_product(product.id, ProductUpdate(image_key=key))
+    delete_objects(images_bucket, [key])
+
+    updated = service.update_product(product.id, ProductUpdate(image_key=key, stock=2))
+
+    assert updated.image_key == key
+
+
+@pytest.mark.usefixtures("images_bucket")
+def test_storage_down_is_service_unavailable(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail(*_args: object) -> None:
+        raise EndpointConnectionError(endpoint_url="x")
+
+    monkeypatch.setattr(product_image_service, "head_object", fail)
+    with pytest.raises(ServiceUnavailableError):
+        _service(db).create_product(
+            _product_in(create_random_category(db).id).model_copy(
+                update={"image_key": _png_key()}
+            )
+        )

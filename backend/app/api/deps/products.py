@@ -9,12 +9,22 @@ from app.repositories import (
     ProductRepository,
     ProductSearchRepository,
 )
-from app.services import ProductCategoryService, ProductSearchService, ProductService
+from app.services import (
+    ProductCategoryService,
+    ProductImageService,
+    ProductSearchService,
+    ProductService,
+)
+
+
+def get_product_image_service(session: SessionDep) -> ProductImageService:
+    return ProductImageService(ProductRepository(session))
 
 
 def get_product_service(session: SessionDep) -> ProductService:
+    repo = ProductRepository(session)
     return ProductService(
-        ProductRepository(session), ProductCategoryRepository(session)
+        repo, ProductCategoryRepository(session), ProductImageService(repo)
     )
 
 
@@ -29,6 +39,9 @@ def get_product_search_service(session: SessionDep) -> ProductSearchService:
 
 
 ProductServiceDep = Annotated[ProductService, Depends(get_product_service)]
+ProductImageServiceDep = Annotated[
+    ProductImageService, Depends(get_product_image_service)
+]
 ProductCategoryServiceDep = Annotated[
     ProductCategoryService, Depends(get_product_category_service)
 ]

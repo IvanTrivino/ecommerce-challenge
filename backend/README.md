@@ -81,7 +81,7 @@ To start over without any previous revision, remove the revision files (`.py` fi
 
 ## Initial Data (Superuser)
 
-The first superuser is seeded by `./backend/app/initial_data.py`, which calls `init_db()` in `./backend/app/core/db.py` and then makes sure the S3 bucket exists. It is idempotent: if a user with the `FIRST_SUPERUSER` email already exists, nothing is created.
+The first superuser is seeded by `./backend/app/initial_data.py`, which calls `init_db()` in `./backend/app/core/db.py` and then makes sure the S3 buckets exist (the private one and the public product images one). It is idempotent: if a user with the `FIRST_SUPERUSER` email already exists, nothing is created.
 
 The email and password come from the `FIRST_SUPERUSER` and `FIRST_SUPERUSER_PASSWORD` variables in `.env` (`.env.prod` in production). The script runs automatically as the last step of `scripts/prestart.sh`, in the `prestart` service, after the migrations. To run it again by hand:
 
@@ -106,6 +106,33 @@ $ docker compose exec backend python -m app.search reindex         # full rebuil
 ```
 
 Run `reindex` once on the first deploy to load the products that already exist. Writes that skip the ORM flush (Core `insert()`/`update()`, `COPY`, raw SQL) must call `OutboxRepository.add_many` in the same transaction.
+
+## Product Images
+
+Each product can have one image. The browser uploads it straight to object storage and the API never sees the bytes. See the [spec](docs/specs/product-images.md).
+
+1. A superuser calls `POST /api/v1/products/images/presign` with the content type (`image/jpeg`, `image/png` or `image/webp`) and the file size (up to 5 MB). The backend answers with an upload ticket: a POST `url`, the form `fields` to send before the file, and the `key` the object will have.
+2. The browser POSTs the file to that URL. The POST policy pins the key, the content type and the size range.
+3. The client sends the `key` as `image_key` when it creates or updates the product. The backend checks that the object exists, is small enough and really is the declared image type, then stores the key. `ProductPublic` returns `image_key` and a computed `image_url`.
+
+Images live in a separate, publicly readable bucket (`S3_PRODUCT_IMAGES_BUCKET`): anonymous users can read `products/*` but not list the bucket or write to it. Prestart creates the bucket and applies its policy and CORS rule (allowed origin: `FRONTEND_HOST`).
+
+| Setting | Default | Purpose |
+|---|---|---|
+| `S3_PRODUCT_IMAGES_BUCKET` | `product-images` | Public images bucket |
+| `S3_PRODUCT_IMAGES_PUBLIC_URL` | empty | Browser-reachable bucket URL. Empty: `<S3_PUBLIC_ENDPOINT_URL>/<bucket>`. Set it for a CDN or a managed provider |
+| `PRODUCT_IMAGE_MAX_BYTES` | `5242880` | Largest allowed upload |
+| `PRODUCT_IMAGE_UPLOAD_EXPIRES_SECONDS` | `300` | How long an upload ticket is valid |
+| `PRODUCT_IMAGE_ORPHAN_GRACE_HOURS` | `24` | Minimum age before an unreferenced upload can be swept |
+| `S3_CA_BUNDLE` | empty | CA file for the storage endpoint, only for self-signed certificates |
+
+Replaced, removed and abandoned uploads are deleted by a Celery beat task that runs daily at 03:30 UTC. It removes objects older than the grace period that no product row references (soft-deleted products count as references). To run it by hand:
+
+```console
+$ docker compose exec celery-worker celery -A app.core.celery_app call app.tasks.sweep_product_images
+```
+
+In production the browser talks to the storage endpoint directly, so it must use the same scheme as the frontend page, or browsers block the upload and the images (spec D5). `compose.prod.yml` runs the bundled RustFS with native TLS on `https://${STORAGE_DOMAIN}:9000`, with the same certificates as nginx. A managed S3-compatible provider works by changing the `S3_*` variables only.
 
 ## Email Templates
 

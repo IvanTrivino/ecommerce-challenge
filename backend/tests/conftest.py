@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -8,6 +9,12 @@ from sqlalchemy.orm import Session
 from app.core import cache
 from app.core.config import settings
 from app.core.db import engine, init_db
+from app.core.storage import (
+    delete_objects,
+    ensure_product_images_bucket,
+    get_s3,
+    iter_objects,
+)
 from app.main import app
 from app.models import OutboxEvent, Product, ProductCategory, User
 from tests.utils.cache import FakeRedis
@@ -51,3 +58,19 @@ def normal_user_token_headers(client: TestClient, db: Session) -> dict[str, str]
     return authentication_token_from_email(
         client=client, email=settings.EMAIL_TEST_USER, db=db
     )
+
+
+@pytest.fixture
+def images_bucket(monkeypatch: pytest.MonkeyPatch) -> Generator[str]:
+    name = f"test-product-images-{uuid4().hex[:8]}"
+    monkeypatch.setattr(settings, "S3_PRODUCT_IMAGES_BUCKET", name)
+    # Tests run in the backend container: upload through the internal endpoint
+    monkeypatch.setattr(
+        settings, "S3_PRODUCT_IMAGES_PUBLIC_URL", f"{settings.S3_ENDPOINT_URL}/{name}"
+    )
+    ensure_product_images_bucket()
+    yield name
+    keys = [o.key for o in iter_objects(name, "")]
+    if keys:
+        delete_objects(name, keys)
+    get_s3().delete_bucket(Bucket=name)

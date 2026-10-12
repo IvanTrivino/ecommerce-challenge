@@ -12,6 +12,11 @@ from app.schemas.products.product_category import (
     ProductCategoryPublic,
     ProductCategoryUpdate,
 )
+from app.schemas.products.product_image import (
+    ProductImageContentType,
+    ProductImageUpload,
+    ProductImageUploadRequest,
+)
 
 __all__ = [
     "ProductBase",
@@ -21,6 +26,9 @@ __all__ = [
     "ProductCategoryPublic",
     "ProductCategoryUpdate",
     "ProductCreate",
+    "ProductImageContentType",
+    "ProductImageUpload",
+    "ProductImageUploadRequest",
     "ProductPublic",
     "ProductUpdate",
     "ProductsPublic",

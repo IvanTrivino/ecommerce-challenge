@@ -34,6 +34,8 @@ x-backend: &backend
     S3_SECRET_KEY: ${S3_SECRET_KEY:?Variable not set}
     S3_REGION: ${S3_REGION:-us-east-1}
     S3_BUCKET: ${S3_BUCKET:-ecommerce}
+    S3_PRODUCT_IMAGES_BUCKET: ${S3_PRODUCT_IMAGES_BUCKET:-product-images}
+    S3_PRODUCT_IMAGES_PUBLIC_URL: ${S3_PRODUCT_IMAGES_PUBLIC_URL:-}
     S3_ADDRESSING_STYLE: path
     ELASTICSEARCH_URL: http://elasticsearch:9200
 

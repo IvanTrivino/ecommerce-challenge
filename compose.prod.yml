@@ -5,11 +5,13 @@
 #
 # Self-contained: Postgres, both Redis instances, Elasticsearch and RustFS all
 # run in this file, so it can also be run locally (see .env.prod.example and
-# scripts/local-certs.sh). Only nginx (80/443) and the RustFS S3 API (9000, for
-# presigned URLs) are published; every service restarts on failure, has
-# resource limits, and all secrets must be provided (no defaults).
-# To use AWS S3 or another provider instead of RustFS, set S3_ENDPOINT_URL (and
-# the other S3_* variables) and remove the rustfs service.
+# scripts/local-certs.sh). Only nginx (80/443) and the RustFS S3 API (9000, over
+# HTTPS with the same certificates as nginx; browsers upload product images to
+# it and load them from it) are published; every service restarts on failure,
+# has resource limits, and all secrets must be provided (no defaults).
+# To use AWS S3 or another provider instead of RustFS, set the S3_* variables
+# (and S3_PRODUCT_IMAGES_PUBLIC_URL for the public images URL) and remove the
+# rustfs and rustfs-tls services and the depends_on entries pointing at them.
 # SMTP is optional: without SMTP_HOST the app simply doesn't send emails.
 #
 # Required: DOMAIN, PROJECT_NAME, SECRET_KEY, FIRST_SUPERUSER,
@@ -28,6 +30,9 @@ x-backend: &backend
     dockerfile: backend/Dockerfile
   restart: always
   logging: *logging
+  volumes:
+    # Only needed to trust a self-signed storage certificate (S3_CA_BUNDLE)
+    - ${CERTS_DIR:-/etc/letsencrypt}:/etc/letsencrypt:ro
   environment: &backend-env
     PROJECT_NAME: ${PROJECT_NAME:?Variable not set}
     SECRET_KEY: ${SECRET_KEY:?Variable not set}
@@ -47,13 +52,16 @@ x-backend: &backend
     SMTP_USER: ${SMTP_USER:-}
     SMTP_PASSWORD: ${SMTP_PASSWORD:-}
     EMAILS_FROM_EMAIL: ${EMAILS_FROM_EMAIL:-}
-    S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://rustfs:9000}
-    # Endpoint browsers use for presigned URLs (RustFS API published on 9000)
-    S3_PUBLIC_ENDPOINT_URL: ${S3_PUBLIC_ENDPOINT_URL:-http://localhost:9000}
+    # RustFS serves TLS on 9000; containers reach it by the same name browsers use
+    S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-https://${STORAGE_DOMAIN:-storage.${DOMAIN}}:9000}
+    S3_PUBLIC_ENDPOINT_URL: ${S3_PUBLIC_ENDPOINT_URL:-https://${STORAGE_DOMAIN:-storage.${DOMAIN}}:9000}
     S3_ACCESS_KEY: ${S3_ACCESS_KEY:?Variable not set}
     S3_SECRET_KEY: ${S3_SECRET_KEY:?Variable not set}
     S3_REGION: ${S3_REGION:-us-east-1}
     S3_BUCKET: ${S3_BUCKET:-ecommerce}
+    S3_PRODUCT_IMAGES_BUCKET: ${S3_PRODUCT_IMAGES_BUCKET:-product-images}
+    S3_PRODUCT_IMAGES_PUBLIC_URL: ${S3_PRODUCT_IMAGES_PUBLIC_URL:-}
+    S3_CA_BUNDLE: ${S3_CA_BUNDLE:-}
     S3_ADDRESSING_STYLE: ${S3_ADDRESSING_STYLE:-path}
     ELASTICSEARCH_URL: http://elasticsearch:9200
 
@@ -145,8 +153,30 @@ services:
         limits:
           memory: 512M
 
-  # S3-compatible object storage. Only the API port is published (browsers
-  # need it for presigned URLs); the web console stays internal.
+  # Copies the TLS certificate into the layout RustFS expects (RUSTFS_TLS_PATH).
+  # Re-run it after renewing the certificate, then restart rustfs.
+  rustfs-tls:
+    image: alpine:3.22
+    restart: "no"
+    logging: *logging
+    command:
+      - sh
+      - -c
+      - >-
+        cp -L /etc/letsencrypt/live/$${DOMAIN}/fullchain.pem /tls/rustfs_cert.pem &&
+        cp -L /etc/letsencrypt/live/$${DOMAIN}/privkey.pem /tls/rustfs_key.pem &&
+        chown 10001:10001 /tls/rustfs_*.pem &&
+        chmod 600 /tls/rustfs_key.pem
+    environment:
+      DOMAIN: ${DOMAIN:?Variable not set}
+    volumes:
+      - ${CERTS_DIR:-/etc/letsencrypt}:/etc/letsencrypt:ro
+      - rustfs-tls:/tls
+
+  # S3-compatible object storage, served over HTTPS (same scheme as the
+  # frontend, so browsers can upload and load product images without
+  # mixed-content errors). Only the API port is published; the web console
+  # stays internal.
   rustfs:
     image: rustfs/rustfs:1.0.1
     restart: always
@@ -160,8 +190,18 @@ services:
       RUSTFS_ADDRESS: ":9000"
       RUSTFS_CONSOLE_ENABLE: "true"
       RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_TLS_PATH: /opt/tls
     volumes:
       - rustfs-data:/data
+      - rustfs-tls:/opt/tls:ro
+    depends_on:
+      rustfs-tls:
+        condition: service_completed_successfully
+    networks:
+      default:
+        # Containers reach RustFS by the name browsers use, so the certificate matches both
+        aliases:
+          - ${STORAGE_DOMAIN:-storage.${DOMAIN}}
     deploy:
       resources:
         limits:
@@ -291,4 +331,5 @@ volumes:
   app-db-data:
   redis-broker-data:
   rustfs-data:
+  rustfs-tls:
   elasticsearch-data:

@@ -27,3 +27,4 @@ class Product(Base):
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     stock: Mapped[int] = mapped_column(Integer, default=0)
     weight: Mapped[Decimal | None] = mapped_column(Numeric(10, 3), default=None)
+    image_key: Mapped[str | None] = mapped_column(String(512), default=None)

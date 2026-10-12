@@ -46,7 +46,14 @@ def test_rollback_leaves_no_product_and_no_event(db: Session) -> None:
     assert all(e.aggregate_id != product_id for e in _events(db))
 
 
-@pytest.mark.parametrize("field, value", [("stock", 99), ("price", Decimal("1.50"))])
+@pytest.mark.parametrize(
+    "field, value",
+    [
+        ("stock", 99),
+        ("price", Decimal("1.50")),
+        ("image_key", "products/00000000-0000-0000-0000-000000000000.png"),
+    ],
+)
 def test_non_search_update_emits_no_event(
     db: Session, field: str, value: object
 ) -> None:

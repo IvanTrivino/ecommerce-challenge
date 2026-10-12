@@ -4,6 +4,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import (
+    ProductImageServiceDep,
     ProductSearchServiceDep,
     ProductServiceDep,
     get_current_active_superuser,
@@ -11,6 +12,8 @@ from app.api.deps import (
 from app.schemas import (
     Message,
     ProductCreate,
+    ProductImageUpload,
+    ProductImageUploadRequest,
     ProductPublic,
     ProductsPublic,
     ProductUpdate,
@@ -39,6 +42,15 @@ def search_products(
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> Any:
     return service.search(q, skip=skip, limit=limit)
+
+
+@router.post(
+    "/images/presign", dependencies=SuperuserOnly, response_model=ProductImageUpload
+)
+def presign_product_image(
+    service: ProductImageServiceDep, upload_in: ProductImageUploadRequest
+) -> Any:
+    return service.presign(upload_in)
 
 
 @router.get("/{product_id}", response_model=ProductPublic)

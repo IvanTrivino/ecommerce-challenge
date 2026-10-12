@@ -15,6 +15,10 @@ class ProductRepository(BaseRepository[Product]):
     def get_many(self, ids: Collection[uuid.UUID]) -> Sequence[Product]:
         return self.session.scalars(self._live().where(Product.id.in_(ids))).all()
 
+    def referenced_image_keys(self, keys: Collection[str]) -> set[str]:
+        statement = select(Product.image_key).where(Product.image_key.in_(keys))
+        return {key for key in self.session.scalars(statement) if key}
+
     def get_by_sku(self, sku: str) -> Product | None:
         return self.session.scalars(self._live().where(Product.sku == sku)).first()
 

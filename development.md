@@ -26,7 +26,7 @@ Automatic interactive API documentation with Swagger UI: <http://localhost:8000/
 
 Adminer, database web administration: <http://localhost:8080>
 
-RustFS (S3-compatible object storage) API: <http://localhost:9000>, web console: <http://localhost:9001>
+RustFS (S3-compatible object storage) API: <http://localhost:9000>, web console: <http://localhost:9001>. Product images are public at `http://localhost:9000/product-images/products/<key>`.
 
 Elasticsearch: <http://localhost:9200>
 
@@ -73,6 +73,8 @@ There are two standalone Compose files, one per environment:
 
 * `compose.dev.yml`: local development. Every service is published on its own port, `./backend` is bind-mounted into the containers (no rebuild or restart; the API and Celery reload on change), and Mailpit, Adminer and RustFS run locally. `.env` sets `COMPOSE_FILE=compose.dev.yml`, so plain `docker compose` commands use it.
 * `compose.prod.yml`: production. It is self-contained (Postgres, Redis, RustFS and Elasticsearch included), publishes only nginx (80/443, HTTPS) and the RustFS API (9000), restarts services automatically, has resource limits, and requires every secret. Copy `.env.prod.example` to `.env.prod` and run `docker compose --env-file .env.prod -f compose.prod.yml up -d --build`, so the development defaults in `.env` are never used. To run it locally, first create a self-signed certificate with `bash scripts/local-certs.sh`.
+
+  RustFS also serves HTTPS, on `https://${STORAGE_DOMAIN}:9000` (default `storage.${DOMAIN}`; `storage.localhost` locally), so browsers can upload and load product images from an HTTPS page. It uses the same certificates as nginx, so the certificate must cover both names (`certbot ... -d ${DOMAIN} -d ${STORAGE_DOMAIN}`) and `STORAGE_DOMAIN` needs a DNS record. Locally, open `https://storage.localhost:9000/` once and accept the self-signed certificate. The `rustfs-tls` service copies the certificate into the layout RustFS expects, so after a renewal run `docker compose -f compose.prod.yml run --rm rustfs-tls && docker compose -f compose.prod.yml restart rustfs` (a certbot `--deploy-hook` can do it automatically).
 
 Docker Compose reads `.env` to fill the `${VAR}` placeholders in the Compose files, and passes the settings each container needs through its `environment:` block. The application inside the container does not read the file itself, so a new variable must also be added to that block.
 
