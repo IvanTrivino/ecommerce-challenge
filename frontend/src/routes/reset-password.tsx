@@ -22,8 +22,8 @@ import {
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import { pageTitle } from "@/config"
-import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
+import { redirectIfLoggedIn } from "@/lib/auth"
 import { handleError } from "@/utils"
 
 const searchSchema = z.object({
@@ -51,9 +51,7 @@ export const Route = createFileRoute("/reset-password")({
   component: ResetPassword,
   validateSearch: searchSchema,
   beforeLoad: async ({ search }) => {
-    if (isLoggedIn()) {
-      throw redirect({ to: "/" })
-    }
+    await redirectIfLoggedIn()
     if (!search.token) {
       throw redirect({ to: "/login" })
     }

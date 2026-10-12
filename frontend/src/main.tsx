@@ -7,6 +7,7 @@ import { ThemeProvider } from "./components/theme-provider"
 import { Toaster } from "./components/ui/sonner"
 import "./index.css"
 import { queryClient } from "./lib/queryClient"
+import { setRouter } from "./lib/routerRef"
 import { routeTree } from "./routeTree.gen"
 
 client.setConfig({
@@ -19,6 +20,8 @@ const router = createRouter({
   context: { queryClient },
   defaultPreload: "intent",
 })
+setRouter(router)
+
 declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router

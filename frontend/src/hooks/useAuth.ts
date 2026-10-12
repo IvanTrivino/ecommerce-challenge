@@ -4,25 +4,21 @@ import { useNavigate } from "@tanstack/react-router"
 import {
   type Body_login_login_access_token as AccessToken,
   LoginService,
-  type UserPublic,
   type UserRegister,
   UsersService,
 } from "@/client"
+import { clearSession, homeFor, isLoggedIn, isSafeRedirect } from "@/lib/auth"
+import { currentUserQueryOptions } from "@/lib/queries/users"
 import { handleError } from "@/utils"
 import useCustomToast from "./useCustomToast"
-
-const isLoggedIn = () => {
-  return localStorage.getItem("access_token") !== null
-}
 
 const useAuth = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
 
-  const { data: user } = useQuery<UserPublic | null, Error>({
-    queryKey: ["currentUser"],
-    queryFn: async () => (await UsersService.readUserMe()).data,
+  const { data: user } = useQuery({
+    ...currentUserQueryOptions,
     enabled: isLoggedIn(),
   })
 
@@ -38,24 +34,33 @@ const useAuth = () => {
     },
   })
 
-  const login = async (data: AccessToken) => {
+  const login = async ({
+    redirect,
+    ...credentials
+  }: AccessToken & { redirect?: string }) => {
     const response = await LoginService.loginAccessToken({
-      body: data,
+      body: credentials,
     })
     localStorage.setItem("access_token", response.data.access_token)
+    const currentUser = await queryClient.fetchQuery(currentUserQueryOptions)
+    return { currentUser, redirect }
   }
 
   const loginMutation = useMutation({
     mutationFn: login,
-    onSuccess: () => {
-      navigate({ to: "/" })
+    onSuccess: ({ currentUser, redirect }) => {
+      if (isSafeRedirect(redirect)) {
+        navigate({ to: redirect })
+      } else {
+        navigate({ to: homeFor(currentUser) })
+      }
     },
     onError: handleError.bind(showErrorToast),
   })
 
   const logout = () => {
-    localStorage.removeItem("access_token")
-    navigate({ to: "/login" })
+    clearSession()
+    navigate({ to: "/" })
   }
 
   return {
@@ -66,5 +71,4 @@ const useAuth = () => {
   }
 }
 
-export { isLoggedIn }
 export default useAuth

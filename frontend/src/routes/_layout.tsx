@@ -7,7 +7,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { isLoggedIn } from "@/hooks/useAuth"
+import { isLoggedIn } from "@/lib/auth"
 
 export const Route = createFileRoute("/_layout")({
   component: Layout,
