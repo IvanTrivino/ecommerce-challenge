@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/form"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
+import { pageTitle } from "@/config"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
@@ -60,7 +61,7 @@ export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
       {
-        title: "Reset Password - FastAPI Template",
+        title: pageTitle("Reset Password"),
       },
     ],
   }),

@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
+import { pageTitle } from "@/config"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 
 const formSchema = z.object({
@@ -44,7 +45,7 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       {
-        title: "Log In - FastAPI Template",
+        title: pageTitle("Log In"),
       },
     ],
   }),

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-
+import { pageTitle } from "@/config"
 import useAuth from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/_layout/")({
@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_layout/")({
   head: () => ({
     meta: [
       {
-        title: "Dashboard - FastAPI Template",
+        title: pageTitle("Dashboard"),
       },
     ],
   }),

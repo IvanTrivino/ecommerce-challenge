@@ -7,6 +7,7 @@ import AddUser from "@/components/Admin/AddUser"
 import { columns, type UserTableData } from "@/components/Admin/columns"
 import { DataTable } from "@/components/Common/DataTable"
 import PendingUsers from "@/components/Pending/PendingUsers"
+import { pageTitle } from "@/config"
 import useAuth from "@/hooks/useAuth"
 
 function getUsersQueryOptions() {
@@ -30,7 +31,7 @@ export const Route = createFileRoute("/_layout/admin")({
   head: () => ({
     meta: [
       {
-        title: "Admin - FastAPI Template",
+        title: pageTitle("Admin"),
       },
     ],
   }),

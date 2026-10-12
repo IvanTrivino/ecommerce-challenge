@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
+import { pageTitle } from "@/config"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
@@ -42,7 +43,7 @@ export const Route = createFileRoute("/recover-password")({
   head: () => ({
     meta: [
       {
-        title: "Recover Password - FastAPI Template",
+        title: pageTitle("Recover Password"),
       },
     ],
   }),
