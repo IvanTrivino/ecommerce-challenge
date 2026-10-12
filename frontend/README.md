@@ -4,22 +4,69 @@ The frontend is built with [Vite](https://vitejs.dev/), [React](https://react.de
 
 ## Requirements
 
-- [Bun](https://bun.sh/) (installed as a dev dependency; bootstrap once with `npx -y bun@1.4.3 install`, then use `npx bun …`)
+- [Docker](https://docs.docker.com/get-docker/) with Docker Compose (runs the backend and its services)
+- [Node.js](https://nodejs.org/) with `npx` (only to bootstrap Bun)
+- [Bun](https://bun.sh/) is installed as a dev dependency, so you don't need a global install
 
-## Quick Start
+## Run the app (backend + frontend)
 
-From the project root, install the dependencies and start the frontend development server:
+Run everything from the project root.
+
+1. **Check the root `.env` file.** It defines the first superuser (`FIRST_SUPERUSER` / `FIRST_SUPERUSER_PASSWORD`, default `admin@example.com` / `changethis`) and `COMPOSE_FILE=compose.dev.yml`.
+
+2. **Start the backend stack** (API, Postgres, Redis, Elasticsearch, RustFS, Celery, search indexer, Mailpit):
+
+   ```bash
+   docker compose up -d --wait
+   ```
+
+   The `prestart` service applies the migrations and creates the first superuser. Check it with `curl http://localhost:8000/api/v1/utils/health-check/` (should print `true`). If you can't log in as the superuser (for example the database was reset), create it manually:
+
+   ```bash
+   docker compose exec -w /app/backend backend python -m app.initial_data
+   ```
+
+3. **Install the frontend dependencies.** Bun is a dev dependency; bootstrap it once, then use `npx bun`:
+
+   ```bash
+   npx -y bun@1.4.3 install
+   ```
+
+4. **Configure the frontend** (optional). `frontend/.env` already points to the local API:
+
+   ```env
+   VITE_API_URL=http://localhost:8000
+   VITE_APP_NAME=Ecommerce
+   ```
+
+5. **Start the frontend dev server:**
+
+   ```bash
+   npx bun run dev
+   ```
+
+6. **Open the app:**
+
+   | URL | What |
+   |---|---|
+   | <http://localhost:5173/> | Storefront (public) |
+   | <http://localhost:5173/login> | Log in. As the first superuser you land on `/admin` |
+   | <http://localhost:5173/signup> | Create a customer account |
+   | <http://localhost:8000/docs> | Backend API docs (Swagger) |
+   | <http://localhost:8025> | Mailpit (password recovery emails) |
+
+7. **Add some data.** Log in as the superuser, create a category under **Categories**, then add products under **Products**. They show up in the storefront right away, and in search after about 2 seconds (Elasticsearch is updated asynchronously).
+
+To stop everything: stop the dev server with `Ctrl+C` and run `docker compose down` (add `-v` to also wipe the database).
+
+### Useful commands
 
 ```bash
-bun install
-bun run dev
+npx bun run --filter frontend build   # type-check (strict) and production build
+npx bun run lint                      # Biome (auto-fixes)
+npx bun x tsc --noEmit -p frontend    # type-check app and tests
+npx bun x playwright test             # end-to-end tests (see below)
 ```
-
-Then open <http://localhost:5173/> in your browser.
-
-Start the backend with `docker compose up` from the project root. See [../development.md](../development.md) for the complete setup.
-
-Check `frontend/package.json` to see the other available commands.
 
 ## Removing the Frontend
 
@@ -114,31 +161,29 @@ The frontend code is structured as follows:
 
 ## End-to-End Testing with Playwright
 
-The frontend includes initial end-to-end tests using Playwright. To run the tests, you need to have the Docker Compose stack running. Start the stack with the following command:
+The end-to-end tests cover the storefront, the backoffice, access control, the auth flows and keyboard/mobile (360px) checks.
 
-```bash
-docker compose up -d --wait backend
-```
+1. Start the whole backend stack (the tests also create data through the API and need Elasticsearch for the search test):
 
-Then, you can run the tests with the following command:
+   ```bash
+   docker compose up -d --wait
+   ```
 
-```bash
-npx bun x playwright test
-```
+2. Install the browser once:
 
-The tests log in as the first superuser from the root `.env`, so run `python -m app.initial_data` in the backend container once if the database is empty.
+   ```bash
+   npx bun x playwright install chromium
+   ```
 
-You can also run your tests in UI mode to see the browser and interact with it running:
+3. Run the tests from the project root. Playwright starts the Vite dev server by itself if nothing is listening on port 5173:
 
-```bash
-bunx playwright test --ui
-```
+   ```bash
+   npx bun run test
+   ```
 
-To stop and remove the Docker Compose stack and clean the data created in tests, use the following command:
+   Or from `frontend/`: `npx bun x playwright test`. Use `--ui` for UI mode. To reuse a dev server you already started, set `PLAYWRIGHT_BASE_URL=http://localhost:5173`.
 
-```bash
-docker compose down -v
-```
+The tests log in as the first superuser from the root `.env`. If the database is empty, create it with `docker compose exec -w /app/backend backend python -m app.initial_data`. Tests create their own uniquely named data and clean up most of it. To wipe everything, run `docker compose down -v`.
 
 To update the tests, navigate to the tests directory and modify the existing test files or add new ones as needed.
 

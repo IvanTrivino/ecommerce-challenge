@@ -15,6 +15,17 @@ export default defineConfig({
       "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
+  server: {
+    watch: {
+      // Playwright rewrites these while running and can crash the watcher
+      ignored: [
+        "**/test-results/**",
+        "**/playwright-report/**",
+        "**/playwright/.cache/**",
+        "**/blob-report/**",
+      ],
+    },
+  },
   plugins: [
     tanstackRouter({
       target: "react",
