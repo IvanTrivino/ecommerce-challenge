@@ -2,11 +2,8 @@ import axios from "axios"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { ProductsService } from "@/client"
-import {
-  storageErrorMessage,
-  uploadToStorage,
-  validateImageFile,
-} from "@/lib/productImages"
+import { storageErrorMessage, validateImageFile } from "@/lib/productImages"
+import { uploadToStorage } from "@/lib/storageUpload"
 import { extractErrorMessage } from "@/utils"
 
 type UploadState =

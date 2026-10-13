@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react"
 import type { UseFormReturn } from "react-hook-form"
 
 import type { ProductFormValues } from "@/components/Backoffice/Products/productSchema"
+import { ProgressBar } from "@/components/Common/ProgressBar"
 import { ProductImagePlaceholder } from "@/components/Store/ProductImagePlaceholder"
 import { Button } from "@/components/ui/button"
 import {
@@ -91,19 +92,7 @@ export function ProductImageField({
                 )}
               </div>
               {state.status === "uploading" && (
-                <div
-                  role="progressbar"
-                  aria-label="Upload progress"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={state.progress}
-                  className="h-1.5 w-full rounded bg-muted"
-                >
-                  <div
-                    className="h-full rounded bg-primary transition-[width]"
-                    style={{ width: `${state.progress}%` }}
-                  />
-                </div>
+                <ProgressBar value={state.progress} label="Upload progress" />
               )}
               <FormDescription>{IMAGE_HINT}</FormDescription>
             </div>
