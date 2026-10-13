@@ -2,6 +2,7 @@ import {
   FileUp,
   LayoutDashboard,
   Package,
+  ShoppingCart,
   Store,
   Tags,
   Users,
@@ -22,6 +23,7 @@ import { User } from "./User"
 const adminItems: Item[] = [
   { icon: LayoutDashboard, title: "Overview", path: "/admin" },
   { icon: Package, title: "Products", path: "/admin/products" },
+  { icon: ShoppingCart, title: "Orders", path: "/admin/orders" },
   { icon: FileUp, title: "Imports", path: "/admin/imports" },
   { icon: Tags, title: "Categories", path: "/admin/categories" },
   { icon: Users, title: "Users", path: "/admin/users" },
