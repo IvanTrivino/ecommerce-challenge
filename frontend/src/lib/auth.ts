@@ -29,6 +29,9 @@ export function setToken(token: string) {
 export function clearSession() {
   localStorage.removeItem("access_token")
   queryClient.removeQueries({ queryKey: currentUserQueryOptions.queryKey })
+  // Literal keys: importing the query modules here would create an import cycle
+  queryClient.removeQueries({ queryKey: ["cart"] })
+  queryClient.removeQueries({ queryKey: ["orders"] })
   notifyAuthChange()
 }
 

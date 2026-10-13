@@ -4,7 +4,11 @@ import { clearSession } from "@/lib/auth"
 import { getRouter } from "@/lib/routerRef"
 
 const isProtected = (path: string) =>
-  path.startsWith("/admin") || path === "/account"
+  path.startsWith("/admin") ||
+  path === "/account" ||
+  path === "/cart" ||
+  path === "/checkout" ||
+  path.startsWith("/orders")
 
 function isSessionInvalid(err: AxiosError) {
   const status = err.response?.status
