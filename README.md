@@ -1,91 +1,124 @@
 # Mercato
 
-[![Test Docker Compose](../../actions/workflows/test-docker-compose.yml/badge.svg)](../../actions/workflows/test-docker-compose.yml)
-[![Test Backend](../../actions/workflows/test-backend.yml/badge.svg)](../../actions/workflows/test-backend.yml)
+<p align="center">
+  <img src="./img/github-social-preview.svg" alt="Mercato">
+</p>
+<p align="center">
+  <a href="./architecture.md"> · Architecture · </a>
+</p>
+
+> **_Note:_** The CSV file provided was downloaded on Fri 16/10
 
 ## Technology Stack and Features
 
 - ⚡ [**FastAPI**](https://fastapi.tiangolo.com) for the Python backend API.
-  - 🧰 [SQLModel](https://sqlmodel.tiangolo.com) for the Python SQL database interactions (ORM).
-  - 🔍 [Pydantic](https://docs.pydantic.dev), used by FastAPI, for the data validation and settings management.
+  - 🔖 [FastAPI fullstack template](https://github.com/fastapi/full-stack-fastapi-template) for the initial setup.
   - 💾 [PostgreSQL](https://www.postgresql.org) as the SQL database.
+  - 📋 [Redis](https://redis.io) for cache.
 - 🚀 [React](https://react.dev) for the frontend.
-  - 🧩 Built into the backend application and served by FastAPI on the same domain as the API.
-  - 💃 Using TypeScript, hooks, [Vite](https://vitejs.dev), and other parts of a modern frontend stack.
   - 🎨 [Tailwind CSS](https://tailwindcss.com) and [shadcn/ui](https://ui.shadcn.com) for the frontend components.
-  - 🤖 An automatically generated frontend client.
   - 🧪 [Playwright](https://playwright.dev) for end-to-end testing.
-  - 🦇 Dark mode support.
-- ☁️ [FastAPI Cloud](https://fastapicloud.com) for deployment.
 - 🐋 [Docker Compose](https://www.docker.com) for local services and self-hosted deployment.
   - 📞 [Nginx](https://nginx.org) as a reverse proxy and load balancer across backend replicas, with HTTPS via certbot.
   - ⚙️ [Celery](https://docs.celeryq.dev) workers and Beat scheduler, with a dedicated Redis broker and a separate Redis cache.
   - 🗄️ S3-compatible object storage (RustFS locally) accessed with boto3.
-  - 🔎 [Elasticsearch](https://www.elastic.co/elasticsearch) for search.
-- 🔒 Secure password hashing by default.
-- 🔑 JWT (JSON Web Token) authentication.
-- 📫 Email-based password recovery.
-- ✉️ [React Email](https://react.email) for email templates.
-- 📬 [Mailpit](https://mailpit.axllent.org) for local email testing during development.
-- ✅ Tests with [Pytest](https://pytest.org).
-- 🏭 CI (continuous integration) and CD (continuous deployment) based on GitHub Actions.
+  - 🔎 [Elasticsearch](https://www.elastic.co/elasticsearch) as a search engine for efficient search.
 
-### Dashboard Login
+### Run the project
 
-![Dashboard login screenshot](img/login.png)
+I recommend running in dev mode, so you can test the E2E experience frictionlessly.
+
+To run the backend stack, execute:
+
+```bash
+docker compose up -d
+```
+
+This command creates the following containers/volumes:
+
+- Backend app
+- Postgres database with its volume
+- Redis cache
+- Redis message broker with its volume
+- Mailpit to test emails locally
+- Elasticsearch
+- RustFS with its volume
+- Celery worker
+- Celery Beat
+- Search indexer worker
+- Adminer (optional, to inspect data)
+
+To start the client React dev server:
+
+```bash
+npx bun run dev
+```
+
+Use the following commands to apply migrations and create an admin user (please double-check the backend container name matches yours):
+
+```bash
+docker compose exec backend alembic upgrade head
+docker compose exec backend python app/initial_data.py
+
+Log in with
+Admin: admin@example.com
+Pass: Testing1234*
+```
+
+Below are listed some useful URLs you can use while testing:
+
+- <http://localhost:5173/> -> Storefront
+- <http://localhost:5173/admin> -> Backoffice admin panel
+- <http://localhost:9001/rustfs/console/browser/> -> RustFS console
+- <http://localhost:8025/> -> Email client
+- <http://localhost:8000/docs> -> OpenAPI docs
+
+#### Run project in production mode (optional)
+
+Below are the instructions to run the project in production mode. This mode lacks some E2E integrations, like the SMTP config, so we encourage you to run it in dev mode for local testing.
+
+This project was designed to run multiple backend instances, so if you have enough headroom on your laptop, allocate at least 6GB of RAM in Docker and increase the number of backend instances.
+
+First, you'll need to create certificates (production env routes to HTTPS).
+
+```bash
+bash scripts/local-certs.sh
+```
+
+Build and start the app (production setup needs a single build for the whole app):
+
+```bash
+docker compose -p ecommerce-prod --env-file .env.prod.example -f compose.prod.yml up -d --build
+```
+
+Seed initial data (create admin user)
+
+```bash
+docker exec -t ecommerce-prod-backend-1 python app/initial_data.py
+
+Login with
+Admin: admin@example.com
+Pass: Testing1234*
+```
+
+To stop the app run the following command (do not forget `-v`, to remove volumes as well).
+
+```bash
+docker compose -p ecommerce-prod --env-file .env.prod.example -f compose.prod.yml down -v
+```
+
+### Storefront
+
+![Storefront](img/storefront.png)
 
 ### Dashboard - Admin
 
-![Admin dashboard screenshot](img/dashboard.png)
+![Admin dashboard screenshot](img/admin.png)
 
-### Dashboard - Items
+### Dashboard - File import
 
-![Items dashboard screenshot](img/dashboard-items.png)
-
-### Dashboard - Dark Mode
-
-![Dark mode dashboard screenshot](img/dashboard-dark.png)
-
-### React Email Templates
-
-![Email templates screenshot](img/react-email.png)
+![File import](img/file-upload.png)
 
 ### Mailpit - Local Email Testing
 
-![Mailpit screenshot](img/mailpit.png)
-
-### Interactive API Documentation
-
-![API docs](img/docs.png)
-
-## How to Use It
-
-Click the **Use this template** button at the top of this page to create a new repository.
-
-## Backend Development
-
-Backend docs: [backend/README.md](./backend/README.md).
-
-## Frontend Development
-
-Frontend docs: [frontend/README.md](./frontend/README.md).
-
-## Deployment
-
-FastAPI Cloud deployment: [deployment.md](./deployment.md).
-
-Self-hosted deployment with Docker Compose: [deployment-docker-compose.md](./deployment-docker-compose.md).
-
-## Development
-
-General development docs: [development.md](./development.md).
-
-This includes the local FastAPI and Vite workflow, Docker Compose services, `.env` configuration, and more.
-
-## Release Notes
-
-Check the file [release-notes.md](./release-notes.md).
-
-## License
-
-The Full Stack FastAPI Template is licensed under the terms of the MIT license.
+![Mailpit screenshot](img/email.png)
