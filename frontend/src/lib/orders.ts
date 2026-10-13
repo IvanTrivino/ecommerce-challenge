@@ -34,7 +34,6 @@ export const ORDER_TABS: {
 export const canAct = (order: { state: OrderState }) =>
   order.state === "in_progress"
 
-// The status code and detail of an API error, for flows that branch on them
 export function apiError(err: unknown): { status?: number; detail: string } {
   return {
     status: err instanceof AxiosError ? err.response?.status : undefined,

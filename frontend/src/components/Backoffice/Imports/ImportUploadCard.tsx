@@ -31,7 +31,6 @@ const IN_PROGRESS = "Another import is in progress"
 export function ImportUploadCard({
   activeImport,
 }: {
-  // The import currently pending or running, if any
   activeImport: ProductImportPublic | undefined
 }) {
   const upload = useProductImportUpload()

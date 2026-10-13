@@ -84,7 +84,6 @@ const EditUser = ({ user, onClose }: EditUserProps) => {
   })
 
   const onSubmit = (data: FormData) => {
-    // exclude confirm_password from submission data and remove password if empty
     const { confirm_password: _, ...submitData } = data
     if (!submitData.password) {
       delete submitData.password

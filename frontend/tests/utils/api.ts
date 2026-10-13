@@ -121,7 +121,6 @@ export const deleteProductsInCategory = async (categoryId: string) => {
   for (const product of data.data) await deleteProduct(product.id)
 }
 
-// Uploads a real image to storage and returns its key, for `image_key`
 export const uploadProductImage = async (
   body: Buffer = PNG_1PX,
   contentType: "image/jpeg" | "image/png" | "image/webp" = "image/png",

@@ -64,7 +64,6 @@ const UserInformation = () => {
   const onSubmit = (data: FormData) => {
     const updateData: UserUpdateMe = {}
 
-    // only include fields that have changed
     if (data.full_name !== currentUser?.full_name) {
       updateData.full_name = data.full_name
     }

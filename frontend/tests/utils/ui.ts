@@ -1,6 +1,5 @@
 import { expect, type Page } from "@playwright/test"
 
-// Client-side paginated tables: page forward until a row with the text shows up
 export async function findRow(page: Page, text: string) {
   const row = page.getByRole("row").filter({ hasText: text })
   // the table must have rendered its rows before we start paging
