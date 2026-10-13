@@ -16,6 +16,10 @@ class BadRequestError(AppError):
     status_code = 400
 
 
+class PaymentRequiredError(AppError):
+    status_code = 402
+
+
 class ForbiddenError(AppError):
     status_code = 403
 

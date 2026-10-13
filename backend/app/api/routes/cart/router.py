@@ -3,8 +3,14 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.api.deps import CartServiceDep, CurrentUser
-from app.schemas import CartItemAdd, CartItemUpdate, CartPublic
+from app.api.deps import CartServiceDep, CheckoutServiceDep, CurrentUser
+from app.schemas import (
+    CartItemAdd,
+    CartItemUpdate,
+    CartPublic,
+    OrderPublic,
+    PlaceOrderRequest,
+)
 
 router = APIRouter(prefix="/cart", tags=["cart"])
 
@@ -36,3 +42,10 @@ def remove_cart_item(
     service: CartServiceDep, current_user: CurrentUser, item_id: uuid.UUID
 ) -> Any:
     return service.remove_item(current_user, item_id)
+
+
+@router.post("/place", response_model=OrderPublic)
+def place_order(
+    service: CheckoutServiceDep, current_user: CurrentUser, place_in: PlaceOrderRequest
+) -> Any:
+    return service.place(current_user, place_in)
