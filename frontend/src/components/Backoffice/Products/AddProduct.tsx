@@ -126,7 +126,7 @@ const AddProduct = () => {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="my-4">
+        <Button>
           <Plus className="mr-2" />
           Add Product
         </Button>

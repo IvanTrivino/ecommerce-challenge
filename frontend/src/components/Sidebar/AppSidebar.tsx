@@ -1,4 +1,11 @@
-import { LayoutDashboard, Package, Store, Tags, Users } from "lucide-react"
+import {
+  FileUp,
+  LayoutDashboard,
+  Package,
+  Store,
+  Tags,
+  Users,
+} from "lucide-react"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
@@ -15,6 +22,7 @@ import { User } from "./User"
 const adminItems: Item[] = [
   { icon: LayoutDashboard, title: "Overview", path: "/admin" },
   { icon: Package, title: "Products", path: "/admin/products" },
+  { icon: FileUp, title: "Imports", path: "/admin/imports" },
   { icon: Tags, title: "Categories", path: "/admin/categories" },
   { icon: Users, title: "Users", path: "/admin/users" },
 ]

@@ -1,16 +1,18 @@
 import { useQuery } from "@tanstack/react-query"
 import {
   createFileRoute,
+  Link,
   stripSearchParams,
   useNavigate,
 } from "@tanstack/react-router"
-import { Package } from "lucide-react"
+import { FileUp, Package } from "lucide-react"
 import { z } from "zod"
 
 import AddProduct from "@/components/Backoffice/Products/AddProduct"
 import { columns } from "@/components/Backoffice/Products/columns"
 import { DataTable } from "@/components/Common/DataTable"
 import PendingProducts from "@/components/Pending/PendingProducts"
+import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
@@ -53,7 +55,15 @@ function Products() {
           <h1 className="text-2xl font-bold tracking-tight">Products</h1>
           <p className="text-muted-foreground">Manage the product catalog</p>
         </div>
-        <AddProduct />
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/admin/imports">
+              <FileUp />
+              Import CSV
+            </Link>
+          </Button>
+          <AddProduct />
+        </div>
       </div>
       <div className="w-full sm:w-64">
         <Select
