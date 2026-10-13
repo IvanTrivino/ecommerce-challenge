@@ -1,0 +1,118 @@
+x-dev-env: &dev-env
+  FASTAPI_ENV: "development"
+  SMTP_HOST: "mailpit"
+  SMTP_PORT: "1025"
+  SMTP_TLS: "false"
+
+x-celery-develop: &celery-develop
+  watch:
+    - path: ./backend
+      action: sync+restart
+      target: /app/backend
+      ignore:
+        - .venv
+    - path: ./backend/pyproject.toml
+      action: rebuild
+
+services:
+
+  proxy:
+    ports:
+      - "80:80"
+
+  db:
+    ports:
+      - "5432:5432"
+
+  adminer:
+    ports:
+      - "8080:8080"
+
+  redis-cache:
+    ports:
+      - "6379:6379"
+
+  redis-broker:
+    ports:
+      - "6380:6379"
+
+  rustfs:
+    ports:
+      - "9000:9000"
+      # Web console
+      - "9001:9001"
+
+  elasticsearch:
+    ports:
+      - "9200:9200"
+
+  prestart:
+    environment: *dev-env
+
+  backend:
+    # No host port: three replicas can't share one. Use http://localhost (nginx).
+    # command: sleep infinity  # Infinite loop to keep container alive doing nothing
+    command:
+      - fastapi
+      - dev
+      - --host
+      - "0.0.0.0"
+    develop:
+      watch:
+        - path: ./backend
+          action: sync
+          target: /app/backend
+          ignore:
+            - .venv
+        - path: ./backend/pyproject.toml
+          action: rebuild
+        - path: ./frontend
+          action: rebuild
+          ignore:
+            - ./frontend/node_modules
+            - ./frontend/dist
+            - ./frontend/blob-report
+            - ./frontend/test-results
+    # TODO: remove once coverage is done locally
+    volumes:
+      - ./backend/htmlcov:/app/backend/htmlcov
+    environment: *dev-env
+
+  celery-worker:
+    environment: *dev-env
+    develop: *celery-develop
+
+  celery-beat:
+    environment: *dev-env
+    develop: *celery-develop
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+  playwright:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.playwright
+      args:
+        - NODE_ENV=production
+    ipc: host
+    depends_on:
+      - backend
+      - mailpit
+    environment:
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER:?Variable not set}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD:?Variable not set}
+      - PLAYWRIGHT_BASE_URL=http://backend:8000
+      - VITE_API_URL=http://backend:8000
+      - MAILPIT_HOST=http://mailpit:8025
+      # For the reports when run locally
+      - PLAYWRIGHT_HTML_HOST=0.0.0.0
+      - CI=${CI:-}
+    volumes:
+      - ./frontend/blob-report:/app/frontend/blob-report
+      - ./frontend/test-results:/app/frontend/test-results
+    ports:
+      - 9323:9323

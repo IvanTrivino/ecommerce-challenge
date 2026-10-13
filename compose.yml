@@ -1,0 +1,193 @@
+x-backend: &backend
+  image: backend:latest
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+  environment: &backend-env
+    PROJECT_NAME: ${PROJECT_NAME:?Variable not set}
+    SECRET_KEY: ${SECRET_KEY:?Variable not set}
+    FIRST_SUPERUSER: ${FIRST_SUPERUSER:?Variable not set}
+    FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD:?Variable not set}
+    SMTP_HOST: ${SMTP_HOST}
+    SMTP_USER: ${SMTP_USER:-}
+    SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    EMAILS_FROM_EMAIL: ${EMAILS_FROM_EMAIL}
+    DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?Variable not set}@db:5432/app
+    SENTRY_DSN: ${SENTRY_DSN:-}
+    # Trust X-Forwarded-* headers coming from nginx (private Docker network)
+    FORWARDED_ALLOW_IPS: "*"
+    REDIS_CACHE_URL: redis://redis-cache:6379/0
+    CELERY_BROKER_URL: redis://redis-broker:6379/0
+    CELERY_RESULT_BACKEND: redis://redis-broker:6379/1
+    S3_ENDPOINT_URL: http://rustfs:9000
+    S3_PUBLIC_ENDPOINT_URL: ${S3_PUBLIC_ENDPOINT_URL:-http://localhost:9000}
+    S3_ACCESS_KEY: ${S3_ACCESS_KEY:?Variable not set}
+    S3_SECRET_KEY: ${S3_SECRET_KEY:?Variable not set}
+    S3_REGION: ${S3_REGION:-us-east-1}
+    S3_BUCKET: ${S3_BUCKET:-ecommerce}
+    S3_ADDRESSING_STYLE: ${S3_ADDRESSING_STYLE:-path}
+    ELASTICSEARCH_URL: http://elasticsearch:9200
+
+services:
+
+  proxy:
+    image: nginx:1.30-alpine
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      # Rendered with envsubst at startup (only ${DOMAIN} is substituted)
+      - ./nginx/dev:/etc/nginx/templates:ro
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+      NGINX_ENVSUBST_FILTER: DOMAIN
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  db:
+    image: postgres:18
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    volumes:
+      - app-db-data:/var/lib/postgresql
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Variable not set}
+      - POSTGRES_DB=app
+
+  adminer:
+    image: adminer
+    depends_on:
+      - db
+    environment:
+      - ADMINER_DESIGN=pepa-linha-dark
+
+  # Redis #1: application cache. Ephemeral, evicts least recently used keys.
+  redis-cache:
+    image: redis:8-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis #2: Celery message broker (+ results). Persistent, must never evict.
+  redis-broker:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis-broker-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Local S3-compatible object storage. The app only speaks the S3 API
+  # (boto3), so this can be swapped for AWS S3 / R2 / etc. via S3_* variables.
+  rustfs:
+    image: rustfs/rustfs:1.0.1
+    environment:
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:?Variable not set}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:?Variable not set}
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+    volumes:
+      - rustfs-data:/data
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
+    environment:
+      discovery.type: single-node
+      # Security is off for local development. Enable it (and set
+      # ELASTICSEARCH_API_KEY) for any deployment reachable from outside.
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+  # One-shot: migrations, initial data, bucket creation. Run once here so the
+  # API replicas don't race each other doing the same thing on startup.
+  prestart:
+    <<: *backend
+    command: ["bash", "scripts/prestart.sh"]
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+      rustfs:
+        condition: service_started
+
+  backend:
+    <<: *backend
+    # No container_name / host port: replicas are reached through nginx
+    deploy:
+      replicas: 3
+    depends_on:
+      prestart:
+        condition: service_completed_successfully
+      redis-cache:
+        condition: service_healthy
+      redis-broker:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celery-worker:
+    <<: *backend
+    command: ["celery", "-A", "app.core.celery_app", "worker", "--loglevel=info"]
+    depends_on:
+      prestart:
+        condition: service_completed_successfully
+      redis-broker:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.core.celery_app inspect ping -d celery@$$HOSTNAME"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 20s
+
+  # Exactly ONE beat instance, otherwise scheduled tasks fire multiple times.
+  celery-beat:
+    <<: *backend
+    command: ["celery", "-A", "app.core.celery_app", "beat", "--loglevel=info", "-s", "/tmp/celerybeat-schedule"]
+    depends_on:
+      prestart:
+        condition: service_completed_successfully
+      redis-broker:
+        condition: service_healthy
+
+volumes:
+  app-db-data:
+  redis-broker-data:
+  rustfs-data:
+  elasticsearch-data:
