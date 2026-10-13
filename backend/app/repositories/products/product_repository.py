@@ -46,6 +46,22 @@ class ProductRepository(BaseRepository[Product]):
     def get_many(self, ids: Collection[uuid.UUID]) -> Sequence[Product]:
         return self.session.scalars(self._live().where(Product.id.in_(ids))).all()
 
+    def lock_many(self, ids: Collection[uuid.UUID]) -> dict[uuid.UUID, Product]:
+        """Lock products in id order, so checkouts sharing products can't deadlock.
+
+        Includes soft-deleted products: callers decide what a deleted product means.
+        """
+        if not ids:
+            return {}
+        statement = (
+            select(Product)
+            .where(Product.id.in_(ids))
+            .order_by(Product.id)
+            .with_for_update(of=Product)
+            .execution_options(populate_existing=True)
+        )
+        return {p.id: p for p in self.session.scalars(statement)}
+
     def referenced_image_keys(self, keys: Collection[str]) -> set[str]:
         statement = select(Product.image_key).where(Product.image_key.in_(keys))
         return {key for key in self.session.scalars(statement) if key}

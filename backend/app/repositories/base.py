@@ -1,10 +1,18 @@
 import uuid
 from collections.abc import Sequence
+from typing import Any
 
 from sqlalchemy import Select, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models import Base
+
+
+def constraint_name(exc: IntegrityError) -> str | None:
+    """The violated constraint or index, as reported by Postgres."""
+    diag: Any = getattr(exc.orig, "diag", None)
+    return getattr(diag, "constraint_name", None)
 
 
 class BaseRepository[ModelT: Base]:

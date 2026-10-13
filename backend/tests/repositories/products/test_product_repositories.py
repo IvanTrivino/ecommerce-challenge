@@ -1,3 +1,4 @@
+import uuid
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
@@ -103,3 +104,19 @@ def test_iter_indexable_skips_deleted_products_and_categories(db: Session) -> No
     assert deleted.id not in ids
     assert in_dead_category.id not in ids
     assert repo.count_indexable() == len(ids)
+
+
+def test_lock_many_includes_soft_deleted_products(db: Session) -> None:
+    live = create_random_product(db)
+    deleted = create_random_product(db)
+    ProductRepository(db).delete(deleted)
+
+    locked = ProductRepository(db).lock_many({live.id, deleted.id})
+    db.rollback()
+
+    assert set(locked) == {live.id, deleted.id}
+
+
+def test_lock_many_with_no_ids_returns_nothing(db: Session) -> None:
+    assert ProductRepository(db).lock_many(set()) == {}
+    assert ProductRepository(db).lock_many({uuid.uuid4()}) == {}

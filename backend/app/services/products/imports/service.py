@@ -4,7 +4,6 @@ import uuid
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from itertools import batched
-from typing import Any
 
 from botocore.exceptions import BotoCoreError, ClientError, EndpointConnectionError
 from sqlalchemy.exc import IntegrityError
@@ -27,6 +26,7 @@ from app.core.storage import (
 from app.models import ProductImport, ProductImportStatus, User
 from app.models.base import get_datetime_utc
 from app.repositories import ProductImportRepository
+from app.repositories.base import constraint_name
 from app.schemas import (
     ProductImportCreate,
     ProductImportErrorPublic,
@@ -45,11 +45,6 @@ ACTIVE_INDEX = "ix_product_import_active"
 FILE_KEY_CONSTRAINT = "product_import_file_key_key"
 
 Enqueue = Callable[[uuid.UUID], str]
-
-
-def _constraint_name(exc: IntegrityError) -> str | None:
-    diag: Any = getattr(exc.orig, "diag", None)
-    return getattr(diag, "constraint_name", None)
 
 
 def _too_large_message() -> str:
@@ -125,7 +120,7 @@ class ProductImportService:
             self.repo.session.commit()
         except IntegrityError as exc:
             self.repo.session.rollback()
-            constraint = _constraint_name(exc)
+            constraint = constraint_name(exc)
             if constraint == ACTIVE_INDEX:
                 raise ConflictError("Another import is in progress") from exc
             if constraint == FILE_KEY_CONSTRAINT:
@@ -180,7 +175,7 @@ class ProductImportService:
             self.repo.session.commit()
         except IntegrityError as exc:
             self.repo.session.rollback()
-            if _constraint_name(exc) == ACTIVE_INDEX:
+            if constraint_name(exc) == ACTIVE_INDEX:
                 raise ConflictError("Another import is in progress") from exc
             raise
         self._queue(imp)
