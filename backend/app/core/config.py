@@ -66,6 +66,13 @@ class Settings(BaseSettings):
     PRODUCT_IMPORT_MAX_STORED_ERRORS: int = 1000
     PRODUCT_IMPORT_RETENTION_DAYS: int = 7
     PRODUCT_IMPORT_STALE_MINUTES: int = 10
+
+    # Cart and orders (see backend/docs/specs/checkout.md)
+    CART_MAX_ITEMS: int = 50
+    ORDER_CURRENCY: str = "USD"
+    ORDER_NOTIFICATION_REQUEUE_AFTER_SECONDS: int = 120
+    ORDER_NOTIFICATION_MAX_ATTEMPTS: int = 5
+    ORDER_NOTIFICATION_BACKOFF_SECONDS: int = 30
     S3_CA_BUNDLE: str | None = None
 
     ELASTICSEARCH_URL: str = "http://localhost:9200"

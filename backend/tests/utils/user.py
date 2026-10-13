@@ -25,12 +25,14 @@ def _service(db: Session) -> UserService:
     return UserService(UserRepository(db))
 
 
-def create_random_user(db: Session) -> User:
-    email = random_email()
+def create_random_user_with_password(db: Session) -> tuple[User, str]:
     password = random_lower_string()
-    user_in = UserCreate(email=email, password=password)
-    user = _service(db).create_user(user_in)
-    return user
+    user_in = UserCreate(email=random_email(), password=password)
+    return _service(db).create_user(user_in), password
+
+
+def create_random_user(db: Session) -> User:
+    return create_random_user_with_password(db)[0]
 
 
 def authentication_token_from_email(

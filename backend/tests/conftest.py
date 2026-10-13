@@ -18,6 +18,9 @@ from app.core.storage import (
 )
 from app.main import app
 from app.models import (
+    CartItem,
+    Order,
+    OrderNotification,
     OutboxEvent,
     Product,
     ProductCategory,
@@ -35,6 +38,9 @@ def db() -> Generator[Session]:
     with Session(engine) as session:
         init_db(session)
         yield session
+        session.execute(delete(OrderNotification))
+        session.execute(delete(CartItem))
+        session.execute(delete(Order))
         session.execute(delete(OutboxEvent))
         session.execute(delete(ProductImportError))
         session.execute(delete(ProductImport))
@@ -52,6 +58,20 @@ def clean_imports() -> Generator[None]:
         with Session(engine) as session:
             session.execute(delete(ProductImportError))
             session.execute(delete(ProductImport))
+            session.commit()
+
+    wipe()
+    yield
+    wipe()
+
+
+@pytest.fixture
+def clean_orders() -> Generator[None]:
+    def wipe() -> None:
+        with Session(engine) as session:
+            session.execute(delete(OrderNotification))
+            session.execute(delete(CartItem))
+            session.execute(delete(Order))
             session.commit()
 
     wipe()
