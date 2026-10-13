@@ -90,7 +90,7 @@ const supportingTextStyle = {
 }
 
 const headerCell = {
-  borderBottom: "1px solid #dce7e5",
+  borderBottom: "1px solid #e0e2f3",
   color: "#64748b",
   fontSize: "11px",
   fontWeight: "700",
@@ -101,7 +101,7 @@ const headerCell = {
 }
 
 const itemCell = {
-  borderBottom: "1px solid #eef3f2",
+  borderBottom: "1px solid #e9ebfa",
   color: "#1e293b",
   fontSize: "14px",
   lineHeight: "22px",
@@ -121,7 +121,7 @@ const skuStyle = {
 
 const ruleStyle = {
   border: "0",
-  borderTop: "1px solid #dce7e5",
+  borderTop: "1px solid #e0e2f3",
   margin: "8px 0 16px",
 }
 

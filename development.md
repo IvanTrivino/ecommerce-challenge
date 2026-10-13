@@ -1,4 +1,4 @@
-# FastAPI Project - Development
+# Mercato - Development
 
 ## Local Development
 

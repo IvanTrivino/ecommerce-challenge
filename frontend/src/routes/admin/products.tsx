@@ -55,7 +55,7 @@ function Products() {
           <h1 className="text-2xl font-bold tracking-tight">Products</h1>
           <p className="text-muted-foreground">Manage the product catalog</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
             <Link to="/admin/imports">
               <FileUp />

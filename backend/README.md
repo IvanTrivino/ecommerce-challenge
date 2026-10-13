@@ -1,4 +1,4 @@
-# FastAPI Project - Backend
+# Mercato - Backend
 
 ## Requirements
 

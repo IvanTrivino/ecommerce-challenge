@@ -9,7 +9,7 @@ export const Heading = ({ children }: HeadingProps) => (
 )
 
 const headingStyle = {
-  color: "#17212b",
+  color: "#1e1b4b",
   fontSize: "26px",
   fontWeight: "700",
   letterSpacing: "-0.3px",

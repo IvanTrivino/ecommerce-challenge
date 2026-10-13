@@ -58,7 +58,7 @@ const fontFamily =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif'
 
 const bodyStyle = {
-  backgroundColor: "#f4f7f6",
+  backgroundColor: "#f5f6fd",
   color: "#1e293b",
   fontFamily,
   margin: "0",
@@ -67,7 +67,7 @@ const bodyStyle = {
 
 const containerStyle = {
   backgroundColor: "#ffffff",
-  border: "1px solid #dce7e5",
+  border: "1px solid #e0e2f3",
   borderRadius: "8px",
   boxSizing: "border-box" as const,
   margin: "0 auto",
@@ -81,7 +81,7 @@ const contentStyle = {
 
 const brandRuleStyle = {
   border: "0",
-  borderTop: "3px solid #00897b",
+  borderTop: "3px solid #4f46e5",
   margin: "0 0 16px",
   width: "32px",
 }
@@ -98,7 +98,7 @@ const brandStyle = {
 
 const footerRuleStyle = {
   border: "0",
-  borderTop: "1px solid #dce7e5",
+  borderTop: "1px solid #e0e2f3",
   margin: "36px 0 18px",
   width: "100%",
 }

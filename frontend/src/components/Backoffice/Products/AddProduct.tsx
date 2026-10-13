@@ -110,9 +110,9 @@ const AddProduct = () => {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="my-4">
+            <span>
               <Button disabled>
-                <Plus className="mr-2" />
+                <Plus />
                 Add Product
               </Button>
             </span>
@@ -127,7 +127,7 @@ const AddProduct = () => {
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>
-          <Plus className="mr-2" />
+          <Plus />
           Add Product
         </Button>
       </DialogTrigger>

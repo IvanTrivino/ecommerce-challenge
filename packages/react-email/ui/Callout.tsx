@@ -17,8 +17,8 @@ export const Detail = ({ label, value }: DetailProps) => (
 )
 
 const calloutStyle = {
-  backgroundColor: "#f2f8f7",
-  borderLeft: "3px solid #00897b",
+  backgroundColor: "#eef0fc",
+  borderLeft: "3px solid #4f46e5",
   margin: "24px 0 28px",
   padding: "6px 18px",
 }
