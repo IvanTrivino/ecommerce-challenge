@@ -121,6 +121,30 @@ test("Replace and then remove an image", async ({ page }) => {
   ).toBeVisible()
 })
 
+// The native file picker (or switching apps) blurs the window, which closes the
+// actions menu; the dialog must survive it. setInputFiles never opens the picker,
+// so blur the window by hand.
+test("The edit dialog stays open when the window loses focus", async ({
+  page,
+}) => {
+  const product = await createProduct(category.id)
+
+  await openEditDialog(page, product.sku)
+  const dialog = page.getByRole("dialog")
+  await expect(dialog).toBeVisible()
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")))
+  await expect(page.getByRole("menu")).toBeHidden()
+  await expect(dialog).toBeVisible()
+
+  // No image upload: other tests here count every request to storage, and the
+  // product list would load its thumbnail
+  const name = randomProductName()
+  await dialog.getByPlaceholder("Name").fill(name)
+  await dialog.getByRole("button", { name: "Save" }).click()
+  await expect(page.getByText("Product updated successfully")).toBeVisible()
+  await expect(page.getByRole("row").filter({ hasText: name })).toBeVisible()
+})
+
 test("Invalid files are rejected without any request", async ({ page }) => {
   const requests: string[] = []
   page.on("request", (req) => {

@@ -1,6 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Trash2 } from "lucide-react"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 
 import { ProductCategoriesService } from "@/client"
@@ -14,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
 import { categoryKeys } from "@/lib/queries/categories"
@@ -23,11 +20,11 @@ import { handleError } from "@/utils"
 
 interface DeleteCategoryProps {
   id: string
-  onSuccess: () => void
+  onClose: () => void
 }
 
-const DeleteCategory = ({ id, onSuccess }: DeleteCategoryProps) => {
-  const [isOpen, setIsOpen] = useState(false)
+// Mounted while open: closing unmounts it
+const DeleteCategory = ({ id, onClose }: DeleteCategoryProps) => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const { handleSubmit } = useForm()
@@ -44,8 +41,7 @@ const DeleteCategory = ({ id, onSuccess }: DeleteCategoryProps) => {
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
       // on a 409 the category stays; close the dialog either way
-      setIsOpen(false)
-      onSuccess()
+      onClose()
       queryClient.invalidateQueries({ queryKey: categoryKeys.all })
       queryClient.invalidateQueries({ queryKey: productKeys.all })
     },
@@ -56,15 +52,7 @@ const DeleteCategory = ({ id, onSuccess }: DeleteCategoryProps) => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuItem
-        variant="destructive"
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
-      >
-        <Trash2 />
-        Delete Category
-      </DropdownMenuItem>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>

@@ -1,4 +1,4 @@
-import { EllipsisVertical } from "lucide-react"
+import { EllipsisVertical, Pencil, Trash2 } from "lucide-react"
 import { useState } from "react"
 
 import type { ProductCategoryPublic } from "@/client"
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
@@ -16,20 +17,40 @@ interface CategoryActionsMenuProps {
 }
 
 export const CategoryActionsMenu = ({ category }: CategoryActionsMenuProps) => {
-  const [open, setOpen] = useState(false)
+  // The dialogs live outside the menu: the menu closes when the window loses
+  // focus and would unmount them with it
+  const [dialog, setDialog] = useState<"edit" | "delete" | null>(null)
+  const close = () => setDialog(null)
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <EllipsisVertical />
-          <span className="sr-only">Category actions</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <EditCategory category={category} onSuccess={() => setOpen(false)} />
-        <DeleteCategory id={category.id} onSuccess={() => setOpen(false)} />
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <EllipsisVertical />
+            <span className="sr-only">Category actions</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => setDialog("edit")}>
+            <Pencil />
+            Edit Category
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={() => setDialog("delete")}
+          >
+            <Trash2 />
+            Delete Category
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {dialog === "edit" && (
+        <EditCategory category={category} onClose={close} />
+      )}
+      {dialog === "delete" && (
+        <DeleteCategory id={category.id} onClose={close} />
+      )}
+    </>
   )
 }

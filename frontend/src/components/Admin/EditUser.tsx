@@ -1,7 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Pencil } from "lucide-react"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
@@ -17,7 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import {
   Form,
   FormControl,
@@ -53,11 +50,11 @@ type FormData = z.infer<typeof formSchema>
 
 interface EditUserProps {
   user: UserPublic
-  onSuccess: () => void
+  onClose: () => void
 }
 
-const EditUser = ({ user, onSuccess }: EditUserProps) => {
-  const [isOpen, setIsOpen] = useState(false)
+// Mounted while open: closing unmounts it, discarding the form
+const EditUser = ({ user, onClose }: EditUserProps) => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
@@ -78,8 +75,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
       UsersService.updateUser({ path: { user_id: user.id }, body: data }),
     onSuccess: () => {
       showSuccessToast("User updated successfully")
-      setIsOpen(false)
-      onSuccess()
+      onClose()
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
@@ -97,14 +93,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuItem
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
-      >
-        <Pencil />
-        Edit User
-      </DropdownMenuItem>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>

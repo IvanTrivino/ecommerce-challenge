@@ -1,6 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Trash2 } from "lucide-react"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 
 import { ProductsService } from "@/client"
@@ -14,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
 import { productKeys } from "@/lib/queries/products"
@@ -22,11 +19,11 @@ import { handleError } from "@/utils"
 
 interface DeleteProductProps {
   id: string
-  onSuccess: () => void
+  onClose: () => void
 }
 
-const DeleteProduct = ({ id, onSuccess }: DeleteProductProps) => {
-  const [isOpen, setIsOpen] = useState(false)
+// Mounted while open: closing unmounts it
+const DeleteProduct = ({ id, onClose }: DeleteProductProps) => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const { handleSubmit } = useForm()
@@ -37,8 +34,7 @@ const DeleteProduct = ({ id, onSuccess }: DeleteProductProps) => {
     },
     onSuccess: () => {
       showSuccessToast("Product deleted successfully")
-      setIsOpen(false)
-      onSuccess()
+      onClose()
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
@@ -51,15 +47,7 @@ const DeleteProduct = ({ id, onSuccess }: DeleteProductProps) => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuItem
-        variant="destructive"
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
-      >
-        <Trash2 />
-        Delete Product
-      </DropdownMenuItem>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>

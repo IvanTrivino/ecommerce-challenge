@@ -1,7 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Pencil } from "lucide-react"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 
 import {
@@ -24,7 +22,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Form } from "@/components/ui/form"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
@@ -35,11 +32,11 @@ import { handleError } from "@/utils"
 
 interface EditCategoryProps {
   category: ProductCategoryPublic
-  onSuccess: () => void
+  onClose: () => void
 }
 
-const EditCategory = ({ category, onSuccess }: EditCategoryProps) => {
-  const [isOpen, setIsOpen] = useState(false)
+// Mounted while open: closing unmounts it, discarding the form
+const EditCategory = ({ category, onClose }: EditCategoryProps) => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
@@ -61,9 +58,7 @@ const EditCategory = ({ category, onSuccess }: EditCategoryProps) => {
       }),
     onSuccess: () => {
       showSuccessToast("Category updated successfully")
-      form.reset(form.getValues())
-      setIsOpen(false)
-      onSuccess()
+      onClose()
     },
     onError: (err) => {
       if (!applyConflictError(err, form, "code", /code/i)) {
@@ -82,21 +77,14 @@ const EditCategory = ({ category, onSuccess }: EditCategoryProps) => {
     if (name) changes.name = data.name
     if (code) changes.code = data.code
     if (Object.keys(changes).length === 0) {
-      setIsOpen(false)
+      onClose()
       return
     }
     mutation.mutate(changes)
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuItem
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
-      >
-        <Pencil />
-        Edit Category
-      </DropdownMenuItem>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
