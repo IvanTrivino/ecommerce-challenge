@@ -30,7 +30,7 @@ server {
     }
 }
 
-# API, load balanced across backend replicas
+# Frontend (static files) and API (load balanced across backend replicas)
 server {
     listen 443 ssl default_server;
     http2 on;
@@ -44,7 +44,43 @@ server {
 
     client_max_body_size 50m;
 
+    # Frontend build, published to the frontend-dist volume by frontend-build
+    root /usr/share/nginx/html;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml text/csv;
+
+    # Temp files written while publishing a release
+    location ~ /\. {
+        return 404;
+    }
+
+    location /assets/ {
+        try_files $uri =404;
+
+        # Vite's hashed output: the content of a URL never changes
+        location ~ ^/assets/[^/]+$ {
+            add_header Cache-Control "public, max-age=31536000, immutable";
+            try_files $uri =404;
+        }
+    }
+
+    # Client-side routes fall back to index.html, revalidated on every load so
+    # a new release is picked up right away
     location / {
+        add_header Cache-Control "no-cache";
+        try_files $uri /index.html =404;
+    }
+
+    # API docs (Swagger UI and ReDoc)
+    location ~ ^/(docs|redoc)(/|$) {
+        proxy_pass http://backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api/ {
         proxy_pass http://backend;
         proxy_http_version 1.1;
         proxy_set_header Host $host;

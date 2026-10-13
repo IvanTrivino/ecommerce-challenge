@@ -9,6 +9,8 @@
 # HTTPS with the same certificates as nginx; browsers upload product images to
 # it and load them from it) are published; every service restarts on failure,
 # has resource limits, and all secrets must be provided (no defaults).
+# nginx serves the frontend build (published to the frontend-dist volume by the
+# one-shot frontend-build service) and proxies /api/ to the backend replicas.
 # To use AWS S3 or another provider instead of RustFS, set the S3_* variables
 # (and S3_PRODUCT_IMAGES_PUBLIC_URL for the public images URL) and remove the
 # rustfs and rustfs-tls services and the depends_on entries pointing at them.
@@ -88,6 +90,8 @@ services:
       - ${CERTS_DIR:-/etc/letsencrypt}:/etc/letsencrypt:ro
       # Webroot for certbot's HTTP-01 challenge
       - /var/www/certbot:/var/www/certbot:ro
+      # Frontend build, published by the frontend-build service
+      - frontend-dist:/usr/share/nginx/html:ro
     environment:
       DOMAIN: ${DOMAIN:?Variable not set}
       NGINX_ENVSUBST_FILTER: DOMAIN
@@ -100,6 +104,19 @@ services:
       resources:
         limits:
           memory: 256M
+
+  # One-shot: builds the frontend and publishes it to the frontend-dist volume,
+  # which nginx serves. Release a new frontend without touching nginx:
+  #   docker compose --env-file .env.prod -f compose.prod.yml up -d --build frontend-build
+  frontend-build:
+    image: ${FRONTEND_IMAGE:-frontend:latest}
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: "no"
+    logging: *logging
+    volumes:
+      - frontend-dist:/target
 
   db:
     image: postgres:18
@@ -219,7 +236,7 @@ services:
     environment:
       discovery.type: single-node
       xpack.security.enabled: "false"
-      ES_JAVA_OPTS: ${ES_JAVA_OPTS:--Xms1g -Xmx1g}
+      ES_JAVA_OPTS: ${ES_JAVA_OPTS:--Xms512m -Xmx512m}
     ulimits:
       memlock:
         soft: -1
@@ -251,9 +268,10 @@ services:
 
   backend:
     <<: *backend
-    # No container_name / host port: replicas are reached through nginx
+    # No container_name / host port: reached through nginx, which load balances
+    # across replicas if this is scaled up (nginx picks them up via DNS)
     deploy:
-      replicas: 3
+      replicas: 1
       resources:
         limits:
           memory: 1G
@@ -335,3 +353,4 @@ volumes:
   rustfs-data:
   rustfs-tls:
   elasticsearch-data:
+  frontend-dist:
