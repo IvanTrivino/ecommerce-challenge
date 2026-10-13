@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { type OrderSummaryPublic, OrdersService } from "@/client"
@@ -59,6 +59,7 @@ const CONFIG = {
 export function OrderActionButton({ order, kind, size = "default" }: Props) {
   const config = CONFIG[kind]
   const [open, setOpen] = useState(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
   const enabled = canAct(order)
@@ -69,8 +70,12 @@ export function OrderActionButton({ order, kind, size = "default" }: Props) {
       toast.success(config.toast(order.number))
       setOpen(false)
     },
-    // A 409 means someone else acted first: the refetch shows the real state
-    onError: handleError.bind(showErrorToast),
+    // A 409 means someone else acted first: close the dialog so the refetched
+    // row shows the real state
+    onError: (err: Error) => {
+      setOpen(false)
+      handleError.call(showErrorToast, err)
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: orderKeys.all })
       if (kind === "cancel") {
@@ -81,6 +86,7 @@ export function OrderActionButton({ order, kind, size = "default" }: Props) {
 
   const button = (
     <Button
+      ref={buttonRef}
       type="button"
       size={size}
       variant={kind === "cancel" ? "outline" : "default"}
@@ -113,7 +119,14 @@ export function OrderActionButton({ order, kind, size = "default" }: Props) {
         </Tooltip>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent
+          className="sm:max-w-md"
+          onCloseAutoFocus={(event) => {
+            // There is no DialogTrigger, so give focus back to the button by hand
+            event.preventDefault()
+            buttonRef.current?.focus()
+          }}
+        >
           <DialogHeader>
             <DialogTitle>{config.title(order.number)}</DialogTitle>
             <DialogDescription>
