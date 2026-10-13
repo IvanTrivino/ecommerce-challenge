@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -7,9 +8,14 @@ import emails
 from jinja2 import Template
 
 from app.core.config import settings
+from app.models import Order, OrderNotificationKind
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+class EmailDeliveryError(Exception):
+    pass
 
 
 @dataclass
@@ -22,7 +28,7 @@ def render_email_template(*, template_name: str, context: dict[str, Any]) -> str
     template_str = (
         Path(__file__).parents[2] / "email-templates" / template_name
     ).read_text()
-    template: Template = Template(template_str)
+    template: Template = Template(template_str, autoescape=True)
     html_content = template.render(context)
     return html_content
 
@@ -32,6 +38,7 @@ def send_email(
     email_to: str,
     subject: str = "",
     html_content: str = "",
+    raise_on_error: bool = False,
 ) -> None:
     assert settings.emails_enabled, "no provided configuration for email variables"
     assert settings.EMAILS_FROM_EMAIL  # For type checker
@@ -51,6 +58,8 @@ def send_email(
         smtp_options["password"] = settings.SMTP_PASSWORD
     response = message.send(to=email_to, smtp=smtp_options)
     logger.info(f"send email result: {response}")
+    if raise_on_error and response.status_code != 250:
+        raise EmailDeliveryError(f"SMTP {response.status_code}: {response.error}")
 
 
 def generate_test_email(email_to: str) -> EmailData:
@@ -96,3 +105,48 @@ def generate_new_account_email(
         },
     )
     return EmailData(html_content=html_content, subject=subject)
+
+
+ORDER_EMAILS = {
+    OrderNotificationKind.PLACED: ("order_placed.html", "Order #{number} confirmed"),
+    OrderNotificationKind.CANCELLED: (
+        "order_cancelled.html",
+        "Order #{number} cancelled",
+    ),
+    OrderNotificationKind.COMPLETED: (
+        "order_completed.html",
+        "Order #{number} completed",
+    ),
+}
+
+
+def _money(amount: Decimal | None) -> str:
+    return f"${amount or Decimal(0):,.2f}"
+
+
+def generate_order_email(order: Order, kind: OrderNotificationKind) -> EmailData:
+    template, subject = ORDER_EMAILS[kind]
+    assert order.placed_at is not None
+    context = {
+        "project_name": settings.PROJECT_NAME,
+        "number": order.number,
+        "placed_at": f"{order.placed_at:%b %d, %Y %H:%M} UTC",
+        "items": [
+            {
+                "name": item.name,
+                "sku": item.sku,
+                "quantity": item.quantity,
+                "unit_price": _money(item.unit_price),
+                "line_total": _money(item.line_total),
+            }
+            for item in order.items
+        ],
+        "total_price": _money(order.total_price),
+        "total_weight": f"{order.total_weight or Decimal(0):.3f} kg",
+        "payment_reference": order.payment_reference or "",
+        "link": f"{settings.FRONTEND_HOST}/orders/{order.id}",
+    }
+    return EmailData(
+        html_content=render_email_template(template_name=template, context=context),
+        subject=f"{settings.PROJECT_NAME} - {subject.format(number=order.number)}",
+    )
