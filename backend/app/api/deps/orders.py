@@ -19,9 +19,7 @@ from app.services import (
 
 
 def enqueue_order_notification(notification_id: int) -> None:
-    from app.tasks import (  # type: ignore[attr-defined]
-        send_order_notification,  # ty: ignore[unresolved-import]
-    )
+    from app.tasks import send_order_notification
 
     send_order_notification.delay(notification_id)
 

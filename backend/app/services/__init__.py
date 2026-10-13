@@ -2,6 +2,8 @@ from app.services.orders import (
     CartService,
     CheckoutService,
     MockPaymentsGateway,
+    NotificationOutcome,
+    OrderNotificationSender,
     OrderService,
     PaymentsGateway,
 )
@@ -18,6 +20,8 @@ __all__ = [
     "CartService",
     "CheckoutService",
     "MockPaymentsGateway",
+    "NotificationOutcome",
+    "OrderNotificationSender",
     "OrderService",
     "PaymentsGateway",
     "ProductCategoryService",

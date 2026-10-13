@@ -41,4 +41,8 @@ celery_app.conf.beat_schedule = {
         "task": "app.tasks.reap_stale_product_imports",
         "schedule": crontab(minute="*/5"),
     },
+    "requeue-order-notifications": {
+        "task": "app.tasks.requeue_order_notifications",
+        "schedule": crontab(minute="*"),
+    },
 }

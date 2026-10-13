@@ -9,7 +9,11 @@ from sqlalchemy.orm import Session
 from app.core.celery_app import celery_app
 from app.core.db import engine
 from app.repositories import ProductImportRepository, ProductRepository
-from app.services import ProductImageService, ProductImportService
+from app.services import (
+    OrderNotificationSender,
+    ProductImageService,
+    ProductImportService,
+)
 from app.services.products.imports.runner import (
     ImportOutcome,
     ProductImportRunner,
@@ -72,3 +76,13 @@ def reap_stale_product_imports() -> int:
     with Session(engine) as session:
         service = ProductImportService(ProductImportRepository(session))
         return service.reap_stale(now=datetime.now(UTC))
+
+
+@celery_app.task
+def send_order_notification(notification_id: int) -> str:
+    return OrderNotificationSender(engine).send(notification_id).value
+
+
+@celery_app.task
+def requeue_order_notifications() -> int:
+    return OrderNotificationSender(engine).requeue_due(send_order_notification.delay)
