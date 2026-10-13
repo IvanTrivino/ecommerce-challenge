@@ -86,6 +86,7 @@ test.describe("Mobile (360px)", () => {
       "/admin",
       `/admin/products?category=${category.id}`,
       "/admin/categories",
+      "/admin/imports",
       "/admin/users",
       "/admin/settings",
     ]) {
@@ -217,6 +218,7 @@ test.describe("Keyboard", () => {
     for (const url of [
       `/admin/products?category=${category.id}`,
       "/admin/categories",
+      "/admin/imports",
     ]) {
       await page.goto(url)
       await page.waitForLoadState("networkidle")
