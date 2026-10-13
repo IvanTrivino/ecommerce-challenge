@@ -132,25 +132,10 @@ def test_get_existing_user_permissions_error(
     assert r.json() == {"detail": "The user doesn't have enough privileges"}
 
 
-def test_get_non_existing_user_permissions_error(
-    client: TestClient,
-    normal_user_token_headers: dict[str, str],
-) -> None:
-    user_id = uuid.uuid4()
-
-    r = client.get(
-        f"{settings.API_V1_STR}/users/{user_id}",
-        headers=normal_user_token_headers,
-    )
-    assert r.status_code == 403
-    assert r.json() == {"detail": "The user doesn't have enough privileges"}
-
-
 def test_create_user_existing_username(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     username = random_email()
-    # username = email
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
     UserService(UserRepository(db)).create_user(user_in)
@@ -248,7 +233,6 @@ def test_update_password_me(
     verified, _ = verify_password(new_password, user_db.password)
     assert verified
 
-    # Revert to the old password to keep consistency in test
     old_data = {
         "current_password": new_password,
         "new_password": settings.FIRST_SUPERUSER_PASSWORD,

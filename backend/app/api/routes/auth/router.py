@@ -36,21 +36,13 @@ def login_access_token(
 
 @router.post("/login/test-token", response_model=UserPublic)
 def test_token(current_user: CurrentUser) -> Any:
-    """
-    Test access token
-    """
     return current_user
 
 
 @router.post("/password-recovery/{email}")
 def recover_password(email: str, service: UserServiceDep) -> Message:
-    """
-    Password Recovery
-    """
     user = service.get_by_email(email)
 
-    # Always return the same response to prevent email enumeration attacks
-    # Only send email if user actually exists
     if user:
         password_reset_token = generate_password_reset_token(email=email)
         email_data = generate_reset_password_email(
@@ -68,15 +60,11 @@ def recover_password(email: str, service: UserServiceDep) -> Message:
 
 @router.post("/reset-password/")
 def reset_password(service: UserServiceDep, body: NewPassword) -> Message:
-    """
-    Reset password
-    """
     email = verify_password_reset_token(token=body.token)
     if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
     user = service.get_by_email(email)
     if not user:
-        # Don't reveal that the user doesn't exist - use same error as invalid token
         raise HTTPException(status_code=400, detail="Invalid token")
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")

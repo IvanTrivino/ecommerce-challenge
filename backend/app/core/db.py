@@ -18,7 +18,6 @@ def get_db() -> Generator[Session]:
 
 
 def init_db(session: Session) -> None:
-    # Tables are created with Alembic migrations
     service = UserService(UserRepository(session))
     if not service.get_by_email(settings.FIRST_SUPERUSER):
         service.create_user(

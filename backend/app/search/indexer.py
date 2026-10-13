@@ -64,7 +64,6 @@ def _build_actions(
     product_ids: Iterable[uuid.UUID],
     rows: dict[uuid.UUID, tuple[Product, ProductCategory]],
 ) -> list[Action]:
-    """One action per product, however many events pointed at it."""
     actions: list[Action] = []
     for product_id in product_ids:
         row = rows.get(product_id)
@@ -83,7 +82,6 @@ def _targets(
     events: list[OutboxEvent],
     rows: dict[uuid.UUID, tuple[Product, ProductCategory]],
 ) -> dict[int, set[uuid.UUID]]:
-    """Map each event id to the product ids it affects."""
     by_category: dict[uuid.UUID, set[uuid.UUID]] = {}
     for product, _ in rows.values():
         by_category.setdefault(product.category_uuid, set()).add(product.id)
@@ -99,7 +97,6 @@ def _targets(
 def _send(
     es: Elasticsearch, actions: list[Action]
 ) -> tuple[dict[uuid.UUID, str], int, int]:
-    """Run the bulk; return failures by product id, plus indexed and deleted counts."""
     failures: dict[uuid.UUID, str] = {}
     indexed = deleted = 0
     results = helpers.streaming_bulk(

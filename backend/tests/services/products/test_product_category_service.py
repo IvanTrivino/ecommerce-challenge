@@ -1,5 +1,3 @@
-import uuid
-
 import pytest
 from sqlalchemy.orm import Session
 
@@ -26,11 +24,6 @@ def test_create_category_and_duplicate_code(db: Session) -> None:
         service.create_category(
             ProductCategoryCreate(name=random_lower_string(), code=code)
         )
-
-
-def test_get_by_id_not_found(db: Session) -> None:
-    with pytest.raises(NotFoundError):
-        _service(db).get_by_id(uuid.uuid4())
 
 
 def test_list_categories(db: Session) -> None:

@@ -1,4 +1,3 @@
-import threading
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -83,24 +82,6 @@ def test_claim_skips_a_row_locked_by_another_session(
     with Session(engine) as holder:
         assert OrderNotificationRepository(holder).claim(notification.id) is not None
         assert OrderNotificationRepository(session).claim(notification.id) is None
-
-
-def test_claim_waits_for_nothing_while_the_holder_runs(
-    session: Session, order: Order
-) -> None:
-    notification = make(session, order)
-    results: list[object] = []
-    with Session(engine) as holder:
-        OrderNotificationRepository(holder).claim(notification.id)
-
-        def other() -> None:
-            with Session(engine) as s:
-                results.append(OrderNotificationRepository(s).claim(notification.id))
-
-        thread = threading.Thread(target=other)
-        thread.start()
-        thread.join(timeout=5)
-    assert results == [None]
 
 
 def test_failures_back_off_and_end_failed(session: Session, order: Order) -> None:

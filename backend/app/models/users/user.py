@@ -7,7 +7,6 @@ from app.models.base import Base
 class User(Base):
     __tablename__ = "user"
     __table_args__ = (
-        # Unique only among live users, so a soft-deleted user's email can be reused
         Index(
             "ix_user_email",
             "email",

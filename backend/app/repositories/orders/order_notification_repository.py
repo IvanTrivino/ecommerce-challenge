@@ -30,7 +30,6 @@ class OrderNotificationRepository:
         return notification
 
     def claim(self, notification_id: int) -> OrderNotification | None:
-        """Lock a pending notification. None if it is done or another worker has it."""
         statement = (
             select(OrderNotification)
             .where(

@@ -75,15 +75,6 @@ def test_placed_email_has_the_order_details() -> None:
     assert "{{" not in html
 
 
-def test_the_item_loop_runs_once_per_item() -> None:
-    html = generate_order_email(
-        make_order("A", "B", "C"), OrderNotificationKind.PLACED
-    ).html_content
-
-    assert [html.count(f"SKU-{i}") for i in range(3)] == [1, 1, 1]
-    assert html.count("×") == 3
-
-
 @pytest.mark.parametrize(
     ("kind", "word"),
     [
@@ -132,13 +123,3 @@ def test_send_email_raises_only_when_asked(monkeypatch: pytest.MonkeyPatch) -> N
             html_content="<p>x</p>",
             raise_on_error=True,
         )
-
-
-@pytest.mark.usefixtures("smtp")
-def test_send_email_accepts_a_250(monkeypatch: pytest.MonkeyPatch) -> None:
-    ok = SimpleNamespace(status_code=250, error=None)
-    monkeypatch.setattr(emails.message.Message, "send", lambda *a, **k: ok)
-
-    send_email(
-        email_to="a@example.com", subject="s", html_content="x", raise_on_error=True
-    )

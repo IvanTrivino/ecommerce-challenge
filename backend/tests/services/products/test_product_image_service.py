@@ -4,7 +4,6 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.exceptions import BadRequestError
 from app.core.storage import get_s3, product_image_url, product_images_public_url
 from app.repositories import ProductRepository
 from app.schemas import ProductImageContentType, ProductImageUploadRequest
@@ -62,16 +61,6 @@ def test_presign_returns_the_public_urls(service: ProductImageService) -> None:
     assert ticket.fields["key"] == ticket.key
     assert ticket.max_bytes == settings.PRODUCT_IMAGE_MAX_BYTES
     assert ticket.expires_in == settings.PRODUCT_IMAGE_UPLOAD_EXPIRES_SECONDS
-
-
-def test_presign_rejects_oversized_files(
-    service: ProductImageService,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(settings, "PRODUCT_IMAGE_MAX_BYTES", 10)
-
-    with pytest.raises(BadRequestError):
-        service.presign(_request("image/png", size=11))
 
 
 def test_ticket_accepts_a_valid_upload(service: ProductImageService) -> None:

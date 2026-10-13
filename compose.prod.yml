@@ -1,23 +1,9 @@
 # Production stack (also runnable locally):
-#   docker compose --env-file .env.prod -f compose.prod.yml up -d
-# Always pass --env-file: the tracked .env holds development defaults that
-# Compose would otherwise silently use for interpolation.
 #
 # Self-contained: Postgres, both Redis instances, Elasticsearch and RustFS all
 # run in this file, so it can also be run locally (see .env.prod.example and
-# scripts/local-certs.sh). Only nginx (80/443) and the RustFS S3 API (9000, over
-# HTTPS with the same certificates as nginx; browsers upload product images to
-# it and load them from it) are published; every service restarts on failure,
-# has resource limits, and all secrets must be provided (no defaults).
-# nginx serves the frontend build (published to the frontend-dist volume by the
-# one-shot frontend-build service) and proxies /api/ to the backend replicas.
-# To use AWS S3 or another provider instead of RustFS, set the S3_* variables
-# (and S3_PRODUCT_IMAGES_PUBLIC_URL for the public images URL) and remove the
-# rustfs and rustfs-tls services and the depends_on entries pointing at them.
-# SMTP is optional: without SMTP_HOST the app simply doesn't send emails.
-#
-# Required: DOMAIN, PROJECT_NAME, SECRET_KEY, FIRST_SUPERUSER,
-# FIRST_SUPERUSER_PASSWORD, POSTGRES_PASSWORD, S3_ACCESS_KEY, S3_SECRET_KEY.
+# scripts/local-certs.sh). 
+# certificates as nginx; browsers upload product images to it and load them from 
 
 x-logging: &logging
   driver: json-file
@@ -33,7 +19,6 @@ x-backend: &backend
   restart: always
   logging: *logging
   volumes:
-    # Only needed to trust a self-signed storage certificate (S3_CA_BUNDLE)
     - ${CERTS_DIR:-/etc/letsencrypt}:/etc/letsencrypt:ro
   environment: &backend-env
     PROJECT_NAME: ${PROJECT_NAME:?Variable not set}
@@ -42,7 +27,6 @@ x-backend: &backend
     FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD:?Variable not set}
     FRONTEND_HOST: ${FRONTEND_HOST:-https://${DOMAIN:?Variable not set}}
     DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?Variable not set}@db:5432/app
-    # Trust X-Forwarded-* headers coming from nginx (private Docker network)
     FORWARDED_ALLOW_IPS: "*"
     REDIS_CACHE_URL: redis://redis-cache:6379/0
     CELERY_BROKER_URL: redis://redis-broker:6379/0
@@ -54,7 +38,6 @@ x-backend: &backend
     SMTP_USER: ${SMTP_USER:-}
     SMTP_PASSWORD: ${SMTP_PASSWORD:-}
     EMAILS_FROM_EMAIL: ${EMAILS_FROM_EMAIL:-}
-    # RustFS serves TLS on 9000; containers reach it by the same name browsers use
     S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-https://${STORAGE_DOMAIN:-storage.${DOMAIN}}:9000}
     S3_PUBLIC_ENDPOINT_URL: ${S3_PUBLIC_ENDPOINT_URL:-https://${STORAGE_DOMAIN:-storage.${DOMAIN}}:9000}
     S3_ACCESS_KEY: ${S3_ACCESS_KEY:?Variable not set}
@@ -79,18 +62,12 @@ services:
       backend:
         condition: service_healthy
     ports:
-      # ACME challenges + redirect to HTTPS
       - "80:80"
       - "443:443"
     volumes:
-      # Rendered with envsubst at startup (only ${DOMAIN} is substituted)
       - ./nginx/prod:/etc/nginx/templates:ro
-      # Certificates issued by certbot on the host (CERTS_DIR overrides the
-      # location, e.g. ./certs for the self-signed local ones)
       - ${CERTS_DIR:-/etc/letsencrypt}:/etc/letsencrypt:ro
-      # Webroot for certbot's HTTP-01 challenge
       - /var/www/certbot:/var/www/certbot:ro
-      # Frontend build, published by the frontend-build service
       - frontend-dist:/usr/share/nginx/html:ro
     environment:
       DOMAIN: ${DOMAIN:?Variable not set}
@@ -105,9 +82,6 @@ services:
         limits:
           memory: 256M
 
-  # One-shot: builds the frontend and publishes it to the frontend-dist volume,
-  # which nginx serves. Release a new frontend without touching nginx:
-  #   docker compose --env-file .env.prod -f compose.prod.yml up -d --build frontend-build
   frontend-build:
     image: ${FRONTEND_IMAGE:-frontend:latest}
     build:
@@ -138,7 +112,7 @@ services:
         limits:
           memory: 1G
 
-  # Redis #1: application cache. Ephemeral, evicts least recently used keys.
+  # Redis #1: application cache.
   redis-cache:
     image: redis:8-alpine
     restart: always
@@ -154,7 +128,7 @@ services:
         limits:
           memory: 320M
 
-  # Redis #2: Celery message broker (+ results). Persistent, must never evict.
+  # Redis #2: Celery message broker (never evicts).
   redis-broker:
     image: redis:8-alpine
     restart: always
@@ -172,8 +146,6 @@ services:
         limits:
           memory: 512M
 
-  # Copies the TLS certificate into the layout RustFS expects (RUSTFS_TLS_PATH).
-  # Re-run it after renewing the certificate, then restart rustfs.
   rustfs-tls:
     image: alpine:3.22
     restart: "no"
@@ -192,10 +164,6 @@ services:
       - ${CERTS_DIR:-/etc/letsencrypt}:/etc/letsencrypt:ro
       - rustfs-tls:/tls
 
-  # S3-compatible object storage, served over HTTPS (same scheme as the
-  # frontend, so browsers can upload and load product images without
-  # mixed-content errors). Only the API port is published; the web console
-  # stays internal.
   rustfs:
     image: rustfs/rustfs:1.0.1
     restart: always
@@ -218,7 +186,6 @@ services:
         condition: service_completed_successfully
     networks:
       default:
-        # Containers reach RustFS by the name browsers use, so the certificate matches both
         aliases:
           - ${STORAGE_DOMAIN:-storage.${DOMAIN}}
     deploy:
@@ -226,9 +193,6 @@ services:
         limits:
           memory: 512M
 
-  # Not published to the host. Security is off because only containers on this
-  # compose network can reach it; enable xpack security and set
-  # ELASTICSEARCH_API_KEY before ever exposing it.
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
     restart: always
@@ -254,8 +218,6 @@ services:
         limits:
           memory: 2G
 
-  # One-shot: migrations, initial data, bucket check. Run once here so the
-  # API replicas don't race each other doing the same thing on startup.
   prestart:
     <<: *backend
     command: ["bash", "scripts/prestart.sh"]
@@ -268,8 +230,6 @@ services:
 
   backend:
     <<: *backend
-    # No container_name / host port: reached through nginx, which load balances
-    # across replicas if this is scaled up (nginx picks them up via DNS)
     deploy:
       replicas: 1
       resources:
@@ -333,7 +293,6 @@ services:
         limits:
           memory: 256M
 
-  # Exactly ONE beat instance, otherwise scheduled tasks fire multiple times.
   celery-beat:
     <<: *backend
     command: ["celery", "-A", "app.core.celery_app", "beat", "--loglevel=info", "-s", "/tmp/celerybeat-schedule"]

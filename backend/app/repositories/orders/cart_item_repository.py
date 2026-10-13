@@ -7,8 +7,6 @@ from app.models import CartItem
 
 
 class CartItemRepository:
-    """Lines are hard-deleted from a Draft, so this doesn't extend BaseRepository."""
-
     def __init__(self, session: Session) -> None:
         self.session = session
 

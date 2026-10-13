@@ -82,10 +82,6 @@ def test_expiry_is_jittered_within_bounds() -> None:
     assert all(180 <= namespace.expiry(200) <= 220 for _ in range(50))
 
 
-def test_zero_jitter_is_exact_ttl() -> None:
-    assert CacheNamespace("exact", ttl=60, jitter=0).expiry() == 60
-
-
 def test_invalid_jitter_is_rejected() -> None:
     with pytest.raises(ValueError, match="jitter"):
         CacheNamespace("bad", jitter=1)

@@ -132,7 +132,6 @@ def test_user_listing_is_placed_only_newest_first(db: Session, user: User) -> No
         old = new_order(session, user, OrderState.COMPLETED, now - timedelta(days=2))
         new = new_order(session, user, OrderState.IN_PROGRESS, now)
         new_order(session, other, OrderState.IN_PROGRESS, now)
-        # The user's Draft is hidden
         draft_owner = create_random_user(db)
         new_order(session, draft_owner)
 

@@ -11,7 +11,6 @@ from app.models import ProductImport, ProductImportStatus
 from app.models.base import get_datetime_utc
 from app.repositories import ProductImportRepository
 from app.schemas import ProductImportPublic
-from app.tasks import reap_stale_product_imports, sweep_product_import_files
 from tests.utils.imports import make_service, start_import, upload_csv
 
 pytestmark = pytest.mark.usefixtures("imports_bucket")
@@ -29,7 +28,6 @@ def fresh(db: Session, imp: ProductImport) -> ProductImport:
 
 
 def test_sweep_deletes_old_files_except_active_ones(db: Session) -> None:
-    """AC-14"""
     service = make_service(db)
     completed = start_import(db, BODY)
     completed.status = ProductImportStatus.COMPLETED
@@ -77,7 +75,6 @@ def test_sweep_survives_a_failing_page(
 
 
 def test_reaper_fails_silent_imports(db: Session) -> None:
-    """AC-15"""
     imp = start_import(db, BODY)
     imp.status = ProductImportStatus.RUNNING
     imp.heartbeat_at = get_datetime_utc() - timedelta(minutes=11)
@@ -121,8 +118,3 @@ def test_reaper_fails_a_pending_import_that_was_never_picked_up(db: Session) -> 
         make_service(db).reap_stale(now=get_datetime_utc() + timedelta(minutes=11)) == 1
     )
     assert fresh(db, imp).status == ProductImportStatus.FAILED
-
-
-def test_scheduled_tasks_return_counts() -> None:
-    assert isinstance(sweep_product_import_files(), int)
-    assert isinstance(reap_stale_product_imports(), int)

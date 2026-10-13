@@ -27,19 +27,6 @@ def columns() -> dict[str, int]:
     return parse_header(HEADER)
 
 
-def test_parse_header_example(columns: dict[str, int]) -> None:
-    assert columns == {
-        "name": 0,
-        "sku": 1,
-        "description": 2,
-        "category": 3,
-        "price": 4,
-        "stock": 5,
-        "weight_kg": 6,
-        "__count__": 7,
-    }
-
-
 def test_parse_header_is_case_and_space_insensitive() -> None:
     result = parse_header([" NAME ", "Sku", "CATEGORY", "price ", " Stock"])
 

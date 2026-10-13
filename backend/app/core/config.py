@@ -13,14 +13,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        # Use top level .env file (one level above ./backend/)
         env_file="../.env",
         env_ignore_empty=True,
         extra="ignore",
     )
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str
-    # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     FRONTEND_HOST: str = "http://localhost:5173"
     FASTAPI_ENV: Literal["development"] | None = None
@@ -37,21 +35,16 @@ class Settings(BaseSettings):
                 return database_url.replace(scheme, "postgresql+psycopg://", 1)
         return database_url
 
-    # Redis: one instance for caching, a separate one as the Celery broker
     REDIS_CACHE_URL: str = "redis://localhost:6379/0"
     CELERY_BROKER_URL: str = "redis://localhost:6380/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6380/1"
 
-    # Object storage: any S3-compatible service (RustFS, MinIO, AWS S3, R2...)
-    # Leave S3_ENDPOINT_URL empty to talk to AWS S3 itself
     S3_ENDPOINT_URL: str | None = "http://localhost:9000"
-    # Endpoint browsers can reach, used for presigned URLs (defaults to S3_ENDPOINT_URL)
     S3_PUBLIC_ENDPOINT_URL: str | None = None
     S3_ACCESS_KEY: str = "changethis"
     S3_SECRET_KEY: str = "changethis"
     S3_REGION: str = "us-east-1"
     S3_BUCKET: str = "ecommerce"
-    # "path" is required by most self-hosted stores, use "virtual" for AWS S3
     S3_ADDRESSING_STYLE: Literal["path", "virtual", "auto"] = "path"
     S3_PRODUCT_IMAGES_BUCKET: str = "product-images"
     S3_PRODUCT_IMAGES_PUBLIC_URL: str | None = None
@@ -67,7 +60,6 @@ class Settings(BaseSettings):
     PRODUCT_IMPORT_RETENTION_DAYS: int = 7
     PRODUCT_IMPORT_STALE_MINUTES: int = 10
 
-    # Cart and orders (see backend/docs/specs/checkout.md)
     CART_MAX_ITEMS: int = 50
     ORDER_CURRENCY: str = "USD"
     ORDER_NOTIFICATION_REQUEUE_AFTER_SECONDS: int = 120

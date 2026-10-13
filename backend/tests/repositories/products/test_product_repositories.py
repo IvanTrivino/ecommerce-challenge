@@ -34,7 +34,7 @@ def test_sku_can_be_reused_after_delete(db: Session) -> None:
 def test_list_and_count_filtered_by_category(db: Session) -> None:
     category = create_random_category(db)
     products = [create_random_product(db, category) for _ in range(2)]
-    create_random_product(db)  # other category
+    create_random_product(db)
     repo = ProductRepository(db)
     assert repo.count_filtered(category_id=category.id) == 2
     listed = repo.list_filtered(category_id=category.id)

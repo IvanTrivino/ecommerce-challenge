@@ -2,8 +2,6 @@ from pydantic import BaseModel, Field
 
 
 class Token(BaseModel):
-    """JSON payload containing access token."""
-
     access_token: str
     token_type: str = "bearer"
 

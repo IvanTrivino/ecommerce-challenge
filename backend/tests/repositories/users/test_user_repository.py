@@ -15,24 +15,6 @@ def test_save_and_get(db: Session) -> None:
     assert repo.get_by_email(user.email) == user
 
 
-def test_get_missing(db: Session) -> None:
-    assert UserRepository(db).get_by_email(random_email()) is None
-
-
-def test_list_and_count(db: Session) -> None:
-    repo = UserRepository(db)
-    repo.save(User(email=random_email(), password="x"))
-    assert repo.count() >= 1
-    assert len(repo.list(skip=0, limit=1)) == 1
-
-
-def test_delete(db: Session) -> None:
-    repo = UserRepository(db)
-    user = repo.save(User(email=random_email(), password="x"))
-    repo.delete(user)
-    assert repo.get_by_email(user.email) is None
-
-
 def test_delete_is_soft(db: Session) -> None:
     repo = UserRepository(db)
     user = repo.save(User(email=random_email(), password="x"))

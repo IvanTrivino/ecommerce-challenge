@@ -47,10 +47,6 @@ class ProductRepository(BaseRepository[Product]):
         return self.session.scalars(self._live().where(Product.id.in_(ids))).all()
 
     def lock_many(self, ids: Collection[uuid.UUID]) -> dict[uuid.UUID, Product]:
-        """Lock products in id order, so checkouts sharing products can't deadlock.
-
-        Includes soft-deleted products: callers decide what a deleted product means.
-        """
         if not ids:
             return {}
         statement = (

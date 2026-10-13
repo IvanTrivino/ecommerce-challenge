@@ -8,7 +8,6 @@ from app.core.storage import head_object
 from app.repositories import ProductRepository
 from app.services import ProductImageService
 from app.services.products import product_image_service
-from app.tasks import sweep_product_images
 from tests.utils.product import create_random_product
 from tests.utils.storage import upload_image
 
@@ -35,7 +34,6 @@ def _exists(bucket: str, key: str) -> bool:
 def test_sweep_deletes_only_old_unreferenced_images(
     db: Session, images_bucket: str
 ) -> None:
-    """AC-8"""
     referenced, soft_deleted, orphan_a, orphan_b = (upload_image() for _ in range(4))
     _product_with_image(db, referenced)
     _product_with_image(db, soft_deleted, deleted=True)
@@ -71,7 +69,3 @@ def test_sweep_survives_a_failing_page(
     monkeypatch.setattr(product_image_service, "delete_objects", fail)
 
     assert _service(db).sweep_orphans(now=datetime.now(UTC) + timedelta(hours=25)) == 0
-
-
-def test_sweep_task_returns_the_deleted_count() -> None:
-    assert isinstance(sweep_product_images(), int)

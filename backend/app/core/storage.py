@@ -50,13 +50,10 @@ def get_s3() -> S3Client:
 
 @lru_cache
 def _get_presign_client() -> S3Client:
-    # Presigned URLs embed the host, so sign them against the endpoint
-    # that browsers can reach (e.g. localhost vs the Docker service name).
     return _build_client(settings.S3_PUBLIC_ENDPOINT_URL or settings.S3_ENDPOINT_URL)
 
 
 def ensure_bucket(bucket: str | None = None, wait_seconds: int = 60) -> None:
-    """Create the bucket if missing, waiting for the store to come up."""
     bucket = bucket or settings.S3_BUCKET
     s3 = get_s3()
     deadline = time.monotonic() + wait_seconds
@@ -126,7 +123,6 @@ def _public_read_policy(bucket: str) -> dict[str, Any]:
 
 
 def ensure_product_images_bucket() -> None:
-    """Create the public images bucket and (re)apply its policy and CORS. Idempotent."""
     bucket = settings.S3_PRODUCT_IMAGES_BUCKET
     ensure_bucket(bucket)
     s3 = get_s3()
@@ -166,7 +162,6 @@ def product_image_url(key: str) -> str:
 def presign_post(
     bucket: str, key: str, *, fields: dict[str, str], max_bytes: int, expires_in: int
 ) -> dict[str, str]:
-    """Form fields for a browser POST upload of `key`. Every field in `fields` is pinned by the policy."""
     post = get_s3().generate_presigned_post(
         bucket,
         key,
@@ -179,7 +174,6 @@ def presign_post(
 
 
 def head_object(bucket: str, key: str) -> StoredObject | None:
-    """None if the object doesn't exist. Other errors propagate."""
     try:
         response = get_s3().head_object(Bucket=bucket, Key=key)
     except ClientError as exc:

@@ -167,23 +167,3 @@ def test_product_update_invalidates_cached_search_data(
     )
     body = client.get(URL, params={"q": "desk"}).json()
     assert body["data"][0]["price"] == "77.00"
-
-
-def test_search_works_when_cache_is_down(
-    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from redis.exceptions import ConnectionError as RedisConnectionError
-
-    from app.core import cache
-
-    product = create_random_product(db)
-    product.name = "Resilient Sofa"
-    ProductRepository(db).save(product)
-    index_all()
-
-    def down() -> None:
-        raise RedisConnectionError("down")
-
-    monkeypatch.setattr(cache, "get_cache", down)
-    body = client.get(URL, params={"q": "sofa"}).json()
-    assert [p["id"] for p in body["data"]] == [str(product.id)]

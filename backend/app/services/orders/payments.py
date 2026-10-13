@@ -20,7 +20,7 @@ class PaymentResult:
 
 
 class PaymentGatewayError(Exception):
-    """The provider could not be reached or answered with an error."""
+    pass
 
 
 class PaymentsGateway(Protocol):
@@ -30,8 +30,6 @@ class PaymentsGateway(Protocol):
 
 
 class MockPaymentsGateway:
-    """Stands in for a real provider: every charge is approved."""
-
     def charge(
         self, *, order_id: uuid.UUID, amount: Decimal, currency: str
     ) -> PaymentResult:

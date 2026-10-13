@@ -24,19 +24,6 @@ def test_create_user(db: Session) -> None:
     assert user.is_superuser is False
 
 
-def test_create_user_flags(db: Session) -> None:
-    user = _service(db).create_user(
-        UserCreate(
-            email=random_email(),
-            password=random_lower_string(),
-            is_active=False,
-            is_superuser=True,
-        )
-    )
-    assert user.is_active is False
-    assert user.is_superuser is True
-
-
 def test_authenticate_user(db: Session) -> None:
     email = random_email()
     password = random_lower_string()

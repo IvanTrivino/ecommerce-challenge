@@ -64,13 +64,11 @@ class _FileFailure(Exception):
 
 @dataclass
 class _Categories:
-
     ids: dict[str, uuid.UUID]
     codes: set[str]
 
 
 class ProductImportRunner:
-
     def __init__(self, engine: Engine) -> None:
         self.engine = engine
 

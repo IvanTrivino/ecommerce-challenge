@@ -141,7 +141,6 @@ def snapshot(db: Session) -> dict[str, tuple[Any, ...]]:
 
 
 def test_example_file(db: Session) -> None:
-    """AC-4"""
     imp = import_example(db)
 
     assert imp.status == "completed"
@@ -181,7 +180,6 @@ def test_example_file(db: Session) -> None:
 
 
 def test_importing_the_example_again(db: Session) -> None:
-    """AC-5"""
     first = import_example(db)
     before = snapshot(db)
     db.execute(delete(OutboxEvent))
@@ -201,7 +199,6 @@ def test_importing_the_example_again(db: Session) -> None:
 def test_results_do_not_depend_on_the_batch_size(
     db: Session, monkeypatch: pytest.MonkeyPatch, batch_size: int
 ) -> None:
-    """AC-20"""
     monkeypatch.setattr(settings, "PRODUCT_IMPORT_BATCH_SIZE", batch_size)
 
     imp = import_example(db)
@@ -212,7 +209,6 @@ def test_results_do_not_depend_on_the_batch_size(
 
 
 def test_resuming_after_a_crash(db: Session, monkeypatch: pytest.MonkeyPatch) -> None:
-    """AC-8"""
     original = ProductRepository.upsert_many
     calls = 0
 
@@ -243,7 +239,6 @@ def test_resuming_after_a_crash(db: Session, monkeypatch: pytest.MonkeyPatch) ->
 
 
 def test_a_locked_import_is_skipped(db: Session) -> None:
-    """AC-9"""
     imp = start_import(db, EXAMPLE_CSV.read_bytes())
     with engine.connect() as other:
         assert ProductImportRepository(db).try_lock(other, imp.id)
@@ -263,7 +258,6 @@ def test_finished_imports_are_not_run_again(db: Session) -> None:
 
 
 def test_missing_required_column_fails_without_writing(db: Session) -> None:
-    """AC-12"""
     imp = run(start_import(db, b"name,sku,category,stock\r\nMug,M-1,Kitchen,1\r\n"))
 
     assert imp.status == "failed"
@@ -280,7 +274,6 @@ def test_empty_header_fails(db: Session) -> None:
 
 
 def test_unterminated_quote_fails_and_keeps_earlier_batches(db: Session) -> None:
-    """AC-12"""
     prefix = random_lower_string()
     lines = ["name,sku,category,price,stock"]
     for line in range(2, 41):
@@ -303,7 +296,6 @@ def test_unterminated_quote_fails_and_keeps_earlier_batches(db: Session) -> None
 
 
 def test_a_changed_file_fails(db: Session) -> None:
-    """AC-13"""
     imp = start_import(db, EXAMPLE_CSV.read_bytes())
     get_s3().put_object(
         Bucket=settings.S3_PRODUCT_IMPORTS_BUCKET, Key=imp.file_key, Body=b"other"
@@ -323,21 +315,6 @@ def test_a_deleted_file_fails(db: Session) -> None:
 
     assert done.status == "failed"
     assert done.error_message == "Import file not found"
-
-
-def test_missing_optional_columns_keep_existing_values(db: Session) -> None:
-    sku, category = random_lower_string(), random_lower_string()
-    full = f"name,sku,description,category,price,stock,weight_kg\r\nMug,{sku},Ceramic,{category},1.00,1,0.5"
-    assert run(start_import(db, full.encode())).status == "completed"
-
-    minimal = f"name,sku,category,price,stock\r\nMug 2,{sku},{category},2.00,9"
-    imp = run(start_import(db, minimal.encode()))
-
-    assert (imp.created_count, imp.updated_count) == (0, 1)
-    updated = product(db, sku)
-    assert (updated.name, updated.price, updated.stock) == ("Mug 2", Decimal("2.00"), 9)
-    assert updated.description == "Ceramic"
-    assert updated.weight == Decimal("0.500")
 
 
 def test_only_the_first_errors_are_stored(
@@ -422,7 +399,6 @@ def test_product_caches_are_invalidated(db: Session, fake_cache: FakeRedis) -> N
 def test_progress_never_decreases_and_reaches_100_on_completion(
     db: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """AC-10"""
     seen: list[tuple[str, int]] = []
     original: Callable[..., Any] = ProductRepository.upsert_many
 

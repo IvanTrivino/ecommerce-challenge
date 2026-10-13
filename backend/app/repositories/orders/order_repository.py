@@ -25,14 +25,12 @@ class OrderRepository(BaseRepository[Order]):
     def lock(
         self, order_id: uuid.UUID, *, user_id: uuid.UUID | None = None
     ) -> Order | None:
-        """Lock one order. With user_id, only if the user owns it."""
         statement = self._locked().where(Order.id == order_id)
         if user_id is not None:
             statement = statement.where(Order.user_uuid == user_id)
         return self.session.scalars(statement).first()
 
     def lock_draft(self, user_id: uuid.UUID) -> Order | None:
-        """The user's Draft, locked. None if there isn't one."""
         statement = self._locked().where(
             Order.user_uuid == user_id, Order.state == OrderState.DRAFT.value
         )
@@ -45,10 +43,6 @@ class OrderRepository(BaseRepository[Order]):
         return self.session.scalars(statement).first()
 
     def create_draft(self, user_id: uuid.UUID, currency: str) -> Order | None:
-        """Insert a Draft inside a SAVEPOINT.
-
-        Returns None if another transaction created the user's Draft first.
-        """
         try:
             with self.session.begin_nested():
                 order = Order(user_uuid=user_id, currency=currency)

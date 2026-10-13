@@ -1,10 +1,4 @@
 class AppError(Exception):
-    """Base class for domain errors raised by the service layer.
-
-    The API layer converts these into HTTP responses, so services stay
-    independent of FastAPI.
-    """
-
     status_code = 500
 
     def __init__(self, detail: str) -> None:

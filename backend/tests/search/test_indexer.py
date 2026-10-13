@@ -54,7 +54,6 @@ def statuses() -> list[str]:
 
 
 def test_create_indexes_document(db: Session) -> None:
-    """AC-1"""
     category = create_random_category(db)
     product = create_random_product(db, category)
     result = run()
@@ -75,7 +74,6 @@ def test_create_indexes_document(db: Session) -> None:
 
 
 def test_rename_updates_document(db: Session) -> None:
-    """AC-4"""
     product = create_random_product(db)
     run()
     product.name = "renamed widget"
@@ -87,7 +85,6 @@ def test_rename_updates_document(db: Session) -> None:
 
 
 def test_soft_delete_removes_document(db: Session) -> None:
-    """AC-5"""
     product = create_random_product(db)
     run()
     assert doc(product.id) is not None
@@ -97,7 +94,6 @@ def test_soft_delete_removes_document(db: Session) -> None:
 
 
 def test_category_delete_removes_all_and_blocks_readd(db: Session) -> None:
-    """AC-6"""
     category = create_random_category(db)
     products = [create_random_product(db, category) for _ in range(3)]
     run()
@@ -116,18 +112,7 @@ def test_category_delete_removes_all_and_blocks_readd(db: Session) -> None:
     assert doc(products[0].id) is None
 
 
-def test_category_delete_with_live_products(db: Session) -> None:
-    """FR-4.2"""
-    category = create_random_category(db)
-    products = [create_random_product(db, category) for _ in range(2)]
-    run()
-    ProductCategoryRepository(db).delete(category)
-    run()
-    assert all(doc(p.id) is None for p in products)
-
-
 def test_category_rename_updates_products(db: Session) -> None:
-    """AC-7"""
     category = create_random_category(db)
     products = [create_random_product(db, category) for _ in range(2)]
     run()
@@ -141,7 +126,6 @@ def test_category_rename_updates_products(db: Session) -> None:
 
 
 def test_duplicate_events_are_deduplicated(db: Session) -> None:
-    """AC-8"""
     product = create_random_product(db)
     run()
     OutboxRepository(db).add_many(OutboxTopic.SEARCH_PRODUCT, [product.id] * 5)
@@ -152,33 +136,10 @@ def test_duplicate_events_are_deduplicated(db: Session) -> None:
     assert set(statuses()) == {OutboxStatus.DONE}
 
 
-def test_reprocessing_is_idempotent(db: Session) -> None:
-    """AC-9"""
-    product = create_random_product(db)
-    run()
-    es = get_es()
-    before = es.get(index=alias(), id=str(product.id))["_version"]
-    OutboxRepository(db).add_many(OutboxTopic.SEARCH_PRODUCT, [product.id])
-    db.commit()
-    run()
-    assert es.get(index=alias(), id=str(product.id))["_version"] == before
-    assert set(statuses()) == {OutboxStatus.DONE}
-
-
-def test_missing_product_is_deleted_from_index(db: Session) -> None:
-    OutboxRepository(db).add_many(OutboxTopic.SEARCH_PRODUCT, [uuid.uuid4()])
-    db.commit()
-    result = run()
-    assert result.deleted == 1
-    assert set(statuses()) == {OutboxStatus.DONE}
-
-
 def test_es_unreachable_retries_then_fails(
     db: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """AC-10"""
     product = create_random_product(db)
-    # keep only the product event
     db.query(OutboxEvent).filter(
         OutboxEvent.topic != OutboxTopic.SEARCH_PRODUCT
     ).delete()

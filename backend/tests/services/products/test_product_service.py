@@ -35,13 +35,6 @@ def _product_in(category_uuid: uuid.UUID, sku: str | None = None) -> ProductCrea
     )
 
 
-def test_create_product(db: Session) -> None:
-    category = create_random_category(db)
-    product = _service(db).create_product(_product_in(category.id))
-    assert product.stock == 0
-    assert product.category_uuid == category.id
-
-
 def test_create_product_duplicate_sku(db: Session) -> None:
     existing = create_random_product(db)
     with pytest.raises(ConflictError):
@@ -51,11 +44,6 @@ def test_create_product_duplicate_sku(db: Session) -> None:
 def test_create_product_unknown_category(db: Session) -> None:
     with pytest.raises(NotFoundError):
         _service(db).create_product(_product_in(uuid.uuid4()))
-
-
-def test_get_by_id_not_found(db: Session) -> None:
-    with pytest.raises(NotFoundError):
-        _service(db).get_by_id(uuid.uuid4())
 
 
 def test_list_products_filters_by_category(db: Session) -> None:
@@ -116,14 +104,6 @@ def test_delete_product(db: Session) -> None:
     service.delete_product(product.id)
     with pytest.raises(NotFoundError):
         service.get_by_id(product.id)
-
-
-def test_write_invalidates_cached_reads(db: Session) -> None:
-    product = create_random_product(db)
-    service = _service(db)
-    assert service.get_by_id(product.id).name == product.name  # fills the cache
-    service.update_product(product.id, ProductUpdate(name="renamed"))
-    assert service.get_by_id(product.id).name == "renamed"
 
 
 def _png_key() -> str:

@@ -32,8 +32,6 @@ class OrderNotificationSender:
         self.engine = engine
 
     def send(self, notification_id: int) -> NotificationOutcome:
-        """Send one notification. The row lock is held until the outcome is saved,
-        so concurrent copies of the task can't send the same email twice."""
         with Session(self.engine) as session:
             repo = OrderNotificationRepository(session)
             notification = repo.claim(notification_id)

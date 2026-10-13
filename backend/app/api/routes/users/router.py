@@ -33,9 +33,6 @@ router = APIRouter(prefix="/users", tags=["users"])
     response_model=UsersPublic,
 )
 def read_users(service: UserServiceDep, skip: int = 0, limit: int = 100) -> Any:
-    """
-    Retrieve users.
-    """
     users, count = service.list_users(skip=skip, limit=limit)
     return UsersPublic(
         data=[UserPublic.model_validate(user) for user in users], count=count
@@ -46,9 +43,6 @@ def read_users(service: UserServiceDep, skip: int = 0, limit: int = 100) -> Any:
     "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
 )
 def create_user(*, service: UserServiceDep, user_in: UserCreate) -> Any:
-    """
-    Create new user.
-    """
     user = service.create_user(user_in)
     if settings.emails_enabled and user_in.email:
         email_data = generate_new_account_email(
@@ -66,9 +60,6 @@ def create_user(*, service: UserServiceDep, user_in: UserCreate) -> Any:
 def update_user_me(
     *, service: UserServiceDep, user_in: UserUpdateMe, current_user: CurrentUser
 ) -> Any:
-    """
-    Update own user.
-    """
     return service.update_me(current_user, user_in)
 
 
@@ -76,18 +67,12 @@ def update_user_me(
 def update_password_me(
     *, service: UserServiceDep, body: UpdatePassword, current_user: CurrentUser
 ) -> Any:
-    """
-    Update own password.
-    """
     service.update_password(current_user, body)
     return Message(message="Password updated successfully")
 
 
 @router.get("/me", response_model=UserPublic)
 def read_user_me(current_user: CurrentUser) -> Any:
-    """
-    Get current user.
-    """
     return current_user
 
 
@@ -98,9 +83,6 @@ def read_my_orders(
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
 ) -> Any:
-    """
-    List the current user's placed orders, newest first.
-    """
     return service.list_for_user(current_user, skip=skip, limit=limit)
 
 
@@ -108,26 +90,17 @@ def read_my_orders(
 def read_my_order(
     service: OrderServiceDep, current_user: CurrentUser, order_id: uuid.UUID
 ) -> Any:
-    """
-    Get one of the current user's placed orders.
-    """
     return service.get_for_user(current_user, order_id)
 
 
 @router.delete("/me", response_model=Message)
 def delete_user_me(service: UserServiceDep, current_user: CurrentUser) -> Any:
-    """
-    Delete own user.
-    """
     service.delete_me(current_user)
     return Message(message="User deleted successfully")
 
 
 @router.post("/signup", response_model=UserPublic)
 def register_user(service: UserServiceDep, user_in: UserRegister) -> Any:
-    """
-    Create new user without the need to be logged in.
-    """
     return service.register(user_in)
 
 
@@ -135,9 +108,6 @@ def register_user(service: UserServiceDep, user_in: UserRegister) -> Any:
 def read_user_by_id(
     user_id: uuid.UUID, service: UserServiceDep, current_user: CurrentUser
 ) -> Any:
-    """
-    Get a specific user by id.
-    """
     user = service.get_by_id(user_id)
     if user == current_user:
         return user
@@ -162,9 +132,6 @@ def update_user(
     user_id: uuid.UUID,
     user_in: UserUpdate,
 ) -> Any:
-    """
-    Update a user.
-    """
     return service.update_user(user_id, user_in)
 
 
@@ -172,8 +139,5 @@ def update_user(
 def delete_user(
     service: UserServiceDep, current_user: CurrentUser, user_id: uuid.UUID
 ) -> Message:
-    """
-    Delete a user.
-    """
     service.delete_user(user_id, current_user)
     return Message(message="User deleted successfully")

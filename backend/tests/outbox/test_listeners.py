@@ -17,7 +17,6 @@ def _events(db: Session) -> list[OutboxEvent]:
 
 
 def test_create_product_emits_one_event(db: Session) -> None:
-    """AC-1 (outbox part)"""
     category = create_random_category(db)
     db.execute(OutboxEvent.__table__.delete())
     db.commit()
@@ -29,7 +28,6 @@ def test_create_product_emits_one_event(db: Session) -> None:
 
 
 def test_rollback_leaves_no_product_and_no_event(db: Session) -> None:
-    """AC-2"""
     category = create_random_category(db)
     product = Product(
         name="x",
@@ -57,7 +55,6 @@ def test_rollback_leaves_no_product_and_no_event(db: Session) -> None:
 def test_non_search_update_emits_no_event(
     db: Session, field: str, value: object
 ) -> None:
-    """AC-3"""
     product = create_random_product(db)
     before = len(_events(db))
     setattr(product, field, value)
@@ -69,7 +66,6 @@ def test_non_search_update_emits_no_event(
     "field", ["name", "description", "sku", "category_uuid", "is_deleted"]
 )
 def test_search_field_update_emits_event(db: Session, field: str) -> None:
-    """AC-4"""
     product = create_random_product(db)
     before = len(_events(db))
     repo = ProductRepository(db)

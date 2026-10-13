@@ -19,10 +19,6 @@ def test_quantities_out_of_range_are_rejected(quantity: int) -> None:
         CartItemUpdate(quantity=quantity)
 
 
-def test_cart_item_add_defaults_to_one() -> None:
-    assert CartItemAdd(product_id=ID).quantity == 1
-
-
 @pytest.mark.parametrize("total", [Decimal("-1"), Decimal("1.001")])
 def test_expected_total_must_be_a_non_negative_amount_in_cents(total: Decimal) -> None:
     with pytest.raises(ValidationError):

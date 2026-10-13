@@ -27,7 +27,6 @@ class UserService:
     def __init__(self, repo: UserRepository) -> None:
         self.repo = repo
 
-    # Queries
     def get_by_id(self, user_id: uuid.UUID) -> User | None:
         return self.repo.get(user_id)
 
@@ -37,7 +36,6 @@ class UserService:
     def list_users(self, *, skip: int, limit: int) -> tuple[Sequence[User], int]:
         return self.repo.list(skip=skip, limit=limit), self.repo.count()
 
-    # Commands
     def create_user(self, user_in: UserCreate) -> User:
         if self.repo.get_by_email(user_in.email):
             raise BadRequestError(
@@ -103,7 +101,6 @@ class UserService:
             self.repo.save(user)
         return user
 
-    # Helpers
     def _ensure_email_available(self, email: str | None, user_id: uuid.UUID) -> None:
         if not email:
             return

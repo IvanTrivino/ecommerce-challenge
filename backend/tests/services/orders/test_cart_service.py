@@ -137,7 +137,6 @@ def test_cart_is_full(
     with pytest.raises(ConflictError, match="Your cart is full"):
         service.add_item(user, CartItemAdd(product_id=create_stocked_product(db).id))
 
-    # Raising the quantity of an existing line is still fine
     cart = service.add_item(user, CartItemAdd(product_id=product.id))
     assert cart.item_count == 3
 

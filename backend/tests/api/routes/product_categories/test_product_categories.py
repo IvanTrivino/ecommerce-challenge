@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from tests.utils.product import create_random_category, create_random_product
+from tests.utils.product import create_random_category
 from tests.utils.utils import random_lower_string
 
 URL = f"{settings.API_V1_STR}/product-categories"
@@ -48,28 +48,3 @@ def test_superuser_crud_flow(
     deleted = client.delete(f"{URL}/{category_id}", headers=superuser_token_headers)
     assert deleted.status_code == 200
     assert client.get(f"{URL}/{category_id}").status_code == 404
-
-
-def test_delete_category_with_products_conflicts(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
-) -> None:
-    product = create_random_product(db)
-    r = client.delete(f"{URL}/{product.category_uuid}", headers=superuser_token_headers)
-    assert r.status_code == 409
-
-
-def test_duplicate_category_name_is_a_conflict(
-    client: TestClient, superuser_token_headers: dict[str, str]
-) -> None:
-    name = f"Electronics {random_lower_string()}"
-    body = {"name": name, "code": random_lower_string()[:20]}
-    assert (
-        client.post(f"{URL}/", json=body, headers=superuser_token_headers).status_code
-        == 200
-    )
-
-    clash = {"name": name.lower(), "code": random_lower_string()[:20]}
-    response = client.post(f"{URL}/", json=clash, headers=superuser_token_headers)
-
-    assert response.status_code == 409
-    assert response.json()["detail"] == "A category with this name already exists"

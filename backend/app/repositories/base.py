@@ -10,14 +10,12 @@ from app.models import Base
 
 
 def constraint_name(exc: IntegrityError) -> str | None:
-    """The violated constraint or index, as reported by Postgres."""
     diag: Any = getattr(exc.orig, "diag", None)
     return getattr(diag, "constraint_name", None)
 
 
 class BaseRepository[ModelT: Base]:
-    """Generic data access shared by every repository.
-
+    """
     Models are soft-deleted, so every read here ignores rows with `is_deleted`.
     Repositories for new models should extend this class and build their own
     queries on top of `_live()`, so the soft-delete filter is never forgotten.
@@ -49,14 +47,12 @@ class BaseRepository[ModelT: Base]:
         return self.session.scalar(statement) or 0
 
     def save(self, entity: ModelT) -> ModelT:
-        """Insert or update `entity`, commit and return it refreshed."""
         self.session.add(entity)
         self.session.commit()
         self.session.refresh(entity)
         return entity
 
     def delete(self, entity: ModelT) -> None:
-        """Soft delete: flag the row instead of removing it."""
         entity.is_deleted = True
         self.session.add(entity)
         self.session.commit()

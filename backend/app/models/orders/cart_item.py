@@ -48,7 +48,6 @@ class CartItem(Base):
     product_name: Mapped[str | None] = mapped_column(String(255), default=None)
     product_sku: Mapped[str | None] = mapped_column(String(100), default=None)
 
-    # Fixed values once placed, live product values while the order is a Draft
     @property
     def name(self) -> str:
         return self.product_name or self.product.name

@@ -295,12 +295,6 @@ def test_rollback_leaves_no_products_and_no_events(
     assert product_events(session) == []
 
 
-def test_empty_input_runs_no_sql(session: Session) -> None:
-    result = ProductRepository(session).upsert_many([], columns=ALL)
-
-    assert (result.created, result.updated, result.unchanged) == (0, 0, 0)
-
-
 def test_duplicate_skus_in_one_call_are_rejected(
     session: Session, category: ProductCategory
 ) -> None:

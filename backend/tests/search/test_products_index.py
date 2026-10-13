@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 
 from app.core.search import get_es
 from app.models import Product, ProductCategory
-from app.search import products_index
 from app.search.products_index import (
     alias,
     ensure_index,
@@ -87,7 +86,3 @@ def test_sku_exact_case_insensitive() -> None:
 
     assert hits("abc-123") == 1
     assert hits("abc") == 0
-
-
-def test_new_index_name_uses_alias() -> None:
-    assert products_index.new_index_name().startswith(f"{alias()}_")

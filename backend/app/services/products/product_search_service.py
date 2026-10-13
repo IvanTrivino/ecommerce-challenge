@@ -34,7 +34,6 @@ class ProductSearchService:
         )
 
     def _load(self, ids: list[uuid.UUID]) -> dict[uuid.UUID, ProductPublic]:
-        """Products by id, from the same cache entries `get_by_id` uses; misses come from Postgres."""
         if not ids:
             return {}
         found: dict[uuid.UUID, ProductPublic] = {}

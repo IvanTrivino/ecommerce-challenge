@@ -40,8 +40,6 @@ Enqueue = Callable[[int], None]
 
 
 class OrderService:
-    """Owns every order state transition and the payment call."""
-
     def __init__(
         self,
         orders: OrderRepository,
@@ -60,11 +58,6 @@ class OrderService:
     def place(
         self, order: Order, products: Mapping[uuid.UUID, Product]
     ) -> OrderNotification:
-        """Move a locked, validated Draft to in_progress.
-
-        The caller holds the locks and commits. If the charge fails, the caller's
-        rollback undoes the stock and the fixed values.
-        """
         now = get_datetime_utc()
         for item in order.items:
             product = products[item.product_uuid]
@@ -83,7 +76,6 @@ class OrderService:
         return self.notifications.add(order.id, OrderNotificationKind.PLACED, now=now)
 
     def cancel(self, order_id: uuid.UUID) -> Order:
-        """In-progress to cancelled: put the stock back (admin)."""
         try:
             order = self._lock_in_progress(
                 order_id, "Only in-progress orders can be cancelled"
@@ -112,7 +104,6 @@ class OrderService:
         return order
 
     def complete(self, order_id: uuid.UUID) -> Order:
-        """In-progress to completed (admin). Stock doesn't change."""
         try:
             order = self._lock_in_progress(
                 order_id, "Only in-progress orders can be completed"

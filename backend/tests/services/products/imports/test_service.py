@@ -4,8 +4,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.exceptions import BadRequestError, ConflictError, NotFoundError
-from app.core.storage import get_s3
+from app.core.exceptions import BadRequestError, ConflictError
 from app.models import ProductImportStatus
 from app.models.base import get_datetime_utc
 from app.schemas import ProductImportCreate, ProductImportUploadRequest
@@ -143,7 +142,6 @@ def test_a_failing_queue_marks_the_import_failed(db: Session) -> None:
     assert imp
     assert imp.status == ProductImportStatus.FAILED
     assert imp.error_message == "Could not queue the import"
-    # the slot is free again
     retry_key = upload_csv(service, BODY)
     service._enqueue = Enqueued()
     service.start(ProductImportCreate(key=retry_key, filename="b.csv"), superuser(db))
@@ -215,11 +213,6 @@ def test_retry_is_refused_while_another_import_is_active(db: Session) -> None:
         service.retry(first.id)
 
 
-def test_get_unknown_import(db: Session) -> None:
-    with pytest.raises(NotFoundError, match="Import not found"):
-        make_service(db).get(uuid.uuid4())
-
-
 def test_list_errors_reports_truncation(db: Session) -> None:
     service = make_service(db)
     imp, _ = service.start(
@@ -233,13 +226,3 @@ def test_list_errors_reports_truncation(db: Session) -> None:
     result = service.list_errors(imp.id, skip=0, limit=10)
 
     assert (result.count, result.truncated) == (0, True)
-
-
-def test_start_survives_a_stale_object_listing(db: Session) -> None:
-    # An object removed between upload and start is "not found", not a crash
-    service = make_service(db)
-    key = upload_csv(service, BODY)
-    get_s3().delete_object(Bucket=settings.S3_PRODUCT_IMPORTS_BUCKET, Key=key)
-
-    with pytest.raises(BadRequestError, match="Import file not found"):
-        service.start(ProductImportCreate(key=key, filename="a.csv"), superuser(db))

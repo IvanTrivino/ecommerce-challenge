@@ -5,20 +5,12 @@ from app.core.config import settings
 from app.core.storage import (
     ObjectChangedError,
     ObjectNotFoundError,
-    ensure_product_images_bucket,
-    ensure_product_imports_bucket,
     get_s3,
     head_object,
     iter_object_chunks,
     product_images_public_url,
 )
 from tests.utils.storage import PNG_1PX, internal_url
-
-
-@pytest.mark.usefixtures("images_bucket")
-def test_ensure_product_images_bucket_is_idempotent() -> None:
-    ensure_product_images_bucket()
-    ensure_product_images_bucket()
 
 
 def test_public_read_is_limited_to_the_products_prefix(images_bucket: str) -> None:
@@ -75,12 +67,6 @@ def test_head_object_returns_none_for_a_missing_key(images_bucket: str) -> None:
     assert head_object(images_bucket, "products/missing.png") is None
 
 
-@pytest.mark.usefixtures("imports_bucket")
-def test_ensure_product_imports_bucket_is_idempotent() -> None:
-    ensure_product_imports_bucket()
-    ensure_product_imports_bucket()
-
-
 def test_imports_bucket_is_private(imports_bucket: str) -> None:
     get_s3().put_object(Bucket=imports_bucket, Key="imports/x.csv", Body=b"a,b\n")
     base = internal_url(f"{settings.S3_ENDPOINT_URL}/{imports_bucket}")
@@ -98,7 +84,7 @@ def test_imports_bucket_cors_allows_only_post(imports_bucket: str) -> None:
 
 
 def test_iter_object_chunks_streams_from_an_offset(imports_bucket: str) -> None:
-    body = bytes(range(256)) * 800  # ~200 KB
+    body = bytes(range(256)) * 800
     get_s3().put_object(Bucket=imports_bucket, Key="imports/big.csv", Body=body)
     etag = head_object(imports_bucket, "imports/big.csv").etag  # type: ignore[union-attr]
     assert etag

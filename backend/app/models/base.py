@@ -10,12 +10,10 @@ def get_datetime_utc() -> datetime:
 
 
 class ModelBase(DeclarativeBase):
-    """Declarative base that only holds the metadata"""
+    pass
 
 
 class Base(ModelBase):
-    """Abstract base for domain models, with audit columns"""
-
     __abstract__ = True
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

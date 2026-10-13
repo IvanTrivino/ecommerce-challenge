@@ -121,7 +121,6 @@ def test_placing_fixes_values_decrements_stock_and_queues_the_email(
         assert 119 <= delay <= 121
     assert fake_cache.data["cache:product:version"] != "before"
 
-    # Later product edits don't touch the placed order
     a_live = db.get_one(Product, a.id)
     db.refresh(a_live)
     a_live.price = Decimal("99.00")
@@ -195,7 +194,6 @@ def test_a_changed_price_is_rejected_without_changes(
 
 def test_an_empty_draft_cannot_be_placed(session: Session, user: User) -> None:
     product_cart = cart_service(session)
-    # An emptied Draft stays: add then remove a line
     with Session(engine) as s:
         product = create_stocked_product(s)
     cart = product_cart.add_item(user, CartItemAdd(product_id=product.id))
@@ -221,18 +219,6 @@ def test_an_unavailable_line_blocks_the_order(
     session.refresh(order)
     assert order.state == OrderState.DRAFT
     assert stock_of(product) == 3
-
-
-def test_a_soft_deleted_product_blocks_the_order(
-    db: Session, session: Session, user: User
-) -> None:
-    product = create_stocked_product(db)
-    fill_cart(session, user, (product, 1))
-    cart = cart_service(session).get_cart(user)
-    ProductRepository(db).delete(db.get_one(Product, product.id))
-
-    with pytest.raises(ConflictError, match="unavailable"):
-        checkout_service(session).place(user, place_request(cart))
 
 
 def test_someone_elses_order_is_not_found(

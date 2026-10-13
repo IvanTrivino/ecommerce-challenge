@@ -1,13 +1,3 @@
-# Local development stack: `docker compose -f compose.dev.yml up`
-# (or just `docker compose up`, since .env sets COMPOSE_FILE).
-#
-# Everything is reachable from the host on its own port. ./backend is
-# bind-mounted into the containers, so edits on the host show up instantly and
-# the API and Celery processes reload on their own (no rebuild or restart).
-# Only a change to dependencies (pyproject.toml / uv.lock) needs
-# `docker compose build`. Not meant for deployment:
-# see compose.prod.yml.
-
 x-backend: &backend
   image: backend:dev
   build:
@@ -40,8 +30,6 @@ x-backend: &backend
     S3_ADDRESSING_STYLE: path
     ELASTICSEARCH_URL: http://elasticsearch:9200
 
-# Shared code: the host's ./backend replaces /app/backend in the image. The
-# virtualenv lives in /app/.venv, outside the mount, so it is untouched.
 x-code-volume: &code-volume ./backend:/app/backend
 
 services:
@@ -71,7 +59,7 @@ services:
     environment:
       ADMINER_DESIGN: pepa-linha-dark
 
-  # Redis #1: application cache. Ephemeral, evicts least recently used keys.
+  # Redis #1: application cache.
   redis-cache:
     image: redis:8-alpine
     command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
@@ -83,7 +71,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis #2: Celery message broker (+ results). Persistent, must never evict.
+  # Redis #2: Celery message broker (never evicts)
   redis-broker:
     image: redis:8-alpine
     command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
@@ -97,7 +85,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Local S3-compatible object storage (API on 9000, web console on 9001).
   rustfs:
     image: rustfs/rustfs:1.0.1
     ports:
@@ -134,14 +121,12 @@ services:
       retries: 10
       start_period: 40s
 
-  # Web UI for the emails the app sends (SMTP on 1025).
   mailpit:
     image: axllent/mailpit
     ports:
       - "8025:8025"
       - "1025:1025"
 
-  # One-shot: migrations, initial data, bucket creation.
   prestart:
     <<: *backend
     command: ["bash", "scripts/prestart.sh"]
@@ -154,8 +139,6 @@ services:
       rustfs:
         condition: service_started
 
-  # Single instance with auto-reload, published on http://localhost:8000
-  # (docs at /docs).
   backend:
     <<: *backend
     command: ["fastapi", "dev", "--host", "0.0.0.0"]
@@ -178,7 +161,6 @@ services:
 
   celery-worker:
     <<: *backend
-    # Celery has no reloader: watchfiles restarts it when a .py file changes
     command: ["watchfiles", "--filter", "python", "celery -A app.core.celery_app worker --loglevel=info", "app"]
     volumes:
       - *code-volume
@@ -198,7 +180,6 @@ services:
       retries: 3
       start_period: 20s
 
-  # Exactly ONE beat instance, otherwise scheduled tasks fire multiple times.
   celery-beat:
     <<: *backend
     command: ["watchfiles", "--filter", "python", "celery -A app.core.celery_app beat --loglevel=info -s /tmp/celerybeat-schedule", "app"]

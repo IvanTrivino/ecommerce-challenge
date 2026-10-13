@@ -29,7 +29,6 @@ def create_access_token(subject: str | Any, expires_delta: timedelta) -> str:
 
 
 def decode_access_token(token: str) -> uuid.UUID:
-    """Return the user id stored in `token`, or raise `InvalidTokenError`."""
     payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
     try:
         return uuid.UUID(payload["sub"])

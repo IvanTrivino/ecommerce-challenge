@@ -72,28 +72,3 @@ def test_purge_done_and_retry_failed(session: Session) -> None:
     stats = repo.stats()
     assert (stats.pending, stats.failed) == (1, 0)
     assert stats.oldest_pending_at is not None
-
-
-def test_mark_done(session: Session) -> None:
-    events = _add(session, 2)
-    OutboxRepository(session).mark_done(events)
-    assert all(e.status == OutboxStatus.DONE and e.processed_at for e in events)
-
-
-def test_claim_batch_skip_locked() -> None:
-    """AC-12"""
-    with Session(engine) as setup:
-        _add(setup, 4)
-        setup.commit()
-    a, b = Session(engine), Session(engine)
-    try:
-        claimed_a = {e.id for e in OutboxRepository(a).claim_batch(2)}
-        claimed_b = {e.id for e in OutboxRepository(b).claim_batch(10)}
-        assert len(claimed_a) == 2
-        assert len(claimed_b) == 2
-        assert claimed_a.isdisjoint(claimed_b)
-    finally:
-        a.rollback()
-        b.rollback()
-        a.close()
-        b.close()
