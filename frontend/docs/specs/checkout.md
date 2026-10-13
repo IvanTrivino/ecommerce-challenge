@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft |
+| **Status** | Implemented |
 | **Owner** | Ivan Trivino |
 | **Last updated** | 2026-10-12 |
 | **Components** | `frontend` (storefront: "+ Add", cart, checkout, my orders; backoffice: Orders; regenerated client; Playwright tests) |

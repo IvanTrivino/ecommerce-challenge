@@ -125,11 +125,15 @@ The frontend has a public storefront and an admin-only backoffice. The route fil
 | `/` | Product catalog (`?category=&page=`) | public |
 | `/search?q=&page=` | Product search | public |
 | `/products/:productId` | Product detail | public |
+| `/cart` | Cart: change quantities, remove lines | logged in |
+| `/checkout` | Read-only review and Place order (payment is simulated) | logged in |
+| `/orders`, `/orders/:orderId` | My orders and an order's detail | logged in |
 | `/account` | Account settings | logged in |
 | `/login?redirect=`, `/signup`, `/recover-password`, `/reset-password` | Auth screens | logged out |
 | `/admin` | Overview | superuser |
 | `/admin/products` | Products CRUD | superuser |
 | `/admin/categories` | Categories CRUD | superuser |
+| `/admin/orders` (`?tab=&page=`), `/admin/orders/:orderId` | Orders by state, with View, Cancel and Complete | superuser |
 | `/admin/imports`, `/admin/imports/:importId` | CSV product imports: upload, history, progress, errors | superuser |
 | `/admin/users` | Users CRUD | superuser |
 | `/admin/settings` | Own account settings | superuser |
@@ -182,6 +186,18 @@ Admins create and update products in bulk from a CSV at `/admin/imports`. See th
 * `frontend/src/routes/admin/imports.index.tsx`, `imports.$importId.tsx` - The pages. All import state comes from the API, so leaving the page does not affect a running import.
 
 Like images, the CSV goes **directly** to object storage with a presigned POST, into a private bucket, so `FRONTEND_HOST` must match the dev origin (CORS on the imports bucket). Category names are unique, so the Playwright specs generate random ones.
+
+### Cart, checkout and orders
+
+Logged-in customers add products with "+ Add", review the cart, and place the order in one click. Admins follow the orders in the backoffice. See the [spec](docs/specs/checkout.md).
+
+* `frontend/src/lib/queries/cart.ts`, `orders.ts` - Query options. The cart query (`["cart"]`) only runs for logged-in users, because the cart endpoints answer 401 to visitors.
+* `frontend/src/hooks/useAddToCart.ts`, `useCart.ts` - "+ Add" (visitors are sent to log in first) and the cart mutations. Each mutation writes the server's `CartPublic` into the cache, so the UI never adds prices up itself.
+* `frontend/src/components/Store/` - `AddToCartButton`, `CartButton` (header badge) and `Cart/*` (lines, quantity stepper, summary).
+* `frontend/src/components/Orders/`, `Backoffice/Orders/` - Order pieces shared by the storefront and the backoffice, and the confirm-and-act buttons.
+* `frontend/src/routes/_store/cart.tsx`, `checkout.tsx`, `orders.*.tsx`, `routes/admin/orders.*.tsx` - The pages.
+
+Placing is idempotent on the server, so "Try again" after a network error is safe. Playwright specs create their own customer, category and products, because a customer has a single cart and stock edits must not leak between parallel tests. The order email test needs the Celery worker running.
 
 ## End-to-End Testing with Playwright
 
