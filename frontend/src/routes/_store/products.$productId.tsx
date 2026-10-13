@@ -2,15 +2,20 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, notFound } from "@tanstack/react-router"
 import { AxiosError } from "axios"
 import { ArrowLeft } from "lucide-react"
+import { useState } from "react"
 import { z } from "zod"
 
 import NotFound from "@/components/Common/NotFound"
+import { AddToCartButton } from "@/components/Store/AddToCartButton"
 import { ProductImage } from "@/components/Store/ProductImage"
 import { StockBadge } from "@/components/Store/StockBadge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { pageTitle } from "@/config"
 import { useCategories } from "@/hooks/useCategories"
 import { formatPrice, formatWeight } from "@/lib/format"
+import { MAX_QUANTITY_PER_ITEM } from "@/lib/orders"
 import { productQueryOptions } from "@/lib/queries/products"
 
 export const Route = createFileRoute("/_store/products/$productId")({
@@ -39,6 +44,9 @@ function ProductDetail() {
   const { data: product } = useSuspenseQuery(productQueryOptions(productId))
   const { categoryName, byId } = useCategories()
   const category = byId.get(product.category_uuid)
+  const stock = product.stock ?? 0
+  const maxQuantity = Math.min(stock, MAX_QUANTITY_PER_ITEM)
+  const [quantity, setQuantity] = useState(1)
 
   return (
     <div className="flex flex-col gap-6">
@@ -79,7 +87,37 @@ function ProductDetail() {
             <span className="text-2xl font-semibold">
               {formatPrice(product.price)}
             </span>
-            <StockBadge stock={product.stock ?? 0} />
+            <StockBadge stock={stock} />
+          </div>
+          <div className="flex items-end gap-3">
+            {stock > 0 ? (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="quantity">Quantity</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min={1}
+                  max={maxQuantity}
+                  value={quantity}
+                  className="w-20"
+                  onChange={(e) => setQuantity(Number(e.target.value))}
+                  onBlur={() =>
+                    setQuantity((q) =>
+                      Math.min(maxQuantity, Math.max(1, Math.trunc(q) || 1)),
+                    )
+                  }
+                />
+              </div>
+            ) : null}
+            <AddToCartButton
+              product={product}
+              quantity={Math.min(
+                maxQuantity,
+                Math.max(1, Math.trunc(quantity) || 1),
+              )}
+              label="Add to cart"
+              size="default"
+            />
           </div>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
             <dt className="text-muted-foreground">SKU</dt>

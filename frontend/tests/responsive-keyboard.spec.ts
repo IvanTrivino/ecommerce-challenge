@@ -187,7 +187,11 @@ test.describe("Keyboard", () => {
     await page.keyboard.press("Enter")
     await expect(page).toHaveURL(/page=2/)
 
-    const card = page.getByTestId("product-card").first()
+    const card = page
+      .getByTestId("product-card")
+      .first()
+      .getByRole("link")
+      .first()
     await expect(async () => {
       await card.focus()
       await expect(card).toBeFocused({ timeout: 1000 })

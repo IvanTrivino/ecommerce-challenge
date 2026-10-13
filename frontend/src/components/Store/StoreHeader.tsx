@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router"
 
 import { Appearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
+import { CartButton } from "@/components/Store/CartButton"
 import { SearchBar } from "@/components/Store/SearchBar"
 import { StoreUserMenu } from "@/components/Store/StoreUserMenu"
 import { Button } from "@/components/ui/button"
@@ -24,7 +25,10 @@ export function StoreHeader() {
         <div className="ml-auto flex items-center gap-2">
           <Appearance />
           {user ? (
-            <StoreUserMenu user={user} />
+            <>
+              <CartButton />
+              <StoreUserMenu user={user} />
+            </>
           ) : loggedIn ? null : (
             <>
               <Button variant="ghost" asChild>
