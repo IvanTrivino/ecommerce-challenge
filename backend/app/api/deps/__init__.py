@@ -5,6 +5,7 @@ from app.api.deps.auth import (
     get_current_user,
 )
 from app.api.deps.database import SessionDep
+from app.api.deps.orders import CartServiceDep, get_cart_service
 from app.api.deps.product_imports import (
     ProductImportServiceDep,
     get_product_import_service,
@@ -22,6 +23,7 @@ from app.api.deps.products import (
 from app.api.deps.users import UserServiceDep, get_user_service
 
 __all__ = [
+    "CartServiceDep",
     "CurrentUser",
     "ProductCategoryServiceDep",
     "ProductImageServiceDep",
@@ -31,6 +33,7 @@ __all__ = [
     "SessionDep",
     "TokenDep",
     "UserServiceDep",
+    "get_cart_service",
     "get_current_active_superuser",
     "get_current_user",
     "get_product_category_service",
