@@ -2,7 +2,7 @@
 
 import { type Client, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, productCategoriesCreateCategoryData, productCategoriesCreateCategoryErrors, productCategoriesCreateCategoryResponses, productCategoriesDeleteCategoryData, productCategoriesDeleteCategoryErrors, productCategoriesDeleteCategoryResponses, productCategoriesReadCategoriesData, productCategoriesReadCategoriesErrors, productCategoriesReadCategoriesResponses, productCategoriesReadCategoryData, productCategoriesReadCategoryErrors, productCategoriesReadCategoryResponses, productCategoriesUpdateCategoryData, productCategoriesUpdateCategoryErrors, productCategoriesUpdateCategoryResponses, productsCreateProductData, productsCreateProductErrors, productsCreateProductResponses, productsDeleteProductData, productsDeleteProductErrors, productsDeleteProductResponses, productsPresignProductImageData, productsPresignProductImageErrors, productsPresignProductImageResponses, productsReadProductData, productsReadProductErrors, productsReadProductResponses, productsReadProductsData, productsReadProductsErrors, productsReadProductsResponses, productsSearchProductsData, productsSearchProductsErrors, productsSearchProductsResponses, productsUpdateProductData, productsUpdateProductErrors, productsUpdateProductResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
+import type { loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, productCategoriesCreateCategoryData, productCategoriesCreateCategoryErrors, productCategoriesCreateCategoryResponses, productCategoriesDeleteCategoryData, productCategoriesDeleteCategoryErrors, productCategoriesDeleteCategoryResponses, productCategoriesReadCategoriesData, productCategoriesReadCategoriesErrors, productCategoriesReadCategoriesResponses, productCategoriesReadCategoryData, productCategoriesReadCategoryErrors, productCategoriesReadCategoryResponses, productCategoriesUpdateCategoryData, productCategoriesUpdateCategoryErrors, productCategoriesUpdateCategoryResponses, productImportsPresignProductImportData, productImportsPresignProductImportErrors, productImportsPresignProductImportResponses, productImportsReadProductImportData, productImportsReadProductImportErrors, productImportsReadProductImportErrorsData, productImportsReadProductImportErrorsErrors, productImportsReadProductImportErrorsResponses, productImportsReadProductImportResponses, productImportsReadProductImportsData, productImportsReadProductImportsErrors, productImportsReadProductImportsResponses, productImportsRetryProductImportData, productImportsRetryProductImportErrors, productImportsRetryProductImportResponses, productImportsStartProductImportData, productImportsStartProductImportErrors, productImportsStartProductImportResponses, productsCreateProductData, productsCreateProductErrors, productsCreateProductResponses, productsDeleteProductData, productsDeleteProductErrors, productsDeleteProductResponses, productsPresignProductImageData, productsPresignProductImageErrors, productsPresignProductImageResponses, productsReadProductData, productsReadProductErrors, productsReadProductResponses, productsReadProductsData, productsReadProductsErrors, productsReadProductsResponses, productsSearchProductsData, productsSearchProductsErrors, productsSearchProductsResponses, productsUpdateProductData, productsUpdateProductErrors, productsUpdateProductResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -402,6 +402,88 @@ export class ProductCategoriesService {
                 'Content-Type': 'application/json',
                 ...options.headers
             }
+        });
+    }
+}
+
+export class ProductImportsService {
+    /**
+     * Presign Product Import
+     */
+    public static presignProductImport<ThrowOnError extends boolean = true>(options: Options<productImportsPresignProductImportData, ThrowOnError>) {
+        return (options.client ?? client).post<productImportsPresignProductImportResponses, productImportsPresignProductImportErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/product-imports/presign',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Read Product Imports
+     */
+    public static readProductImports<ThrowOnError extends boolean = true>(options?: Options<productImportsReadProductImportsData, ThrowOnError>) {
+        return (options?.client ?? client).get<productImportsReadProductImportsResponses, productImportsReadProductImportsErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/product-imports/',
+            ...options
+        });
+    }
+    
+    /**
+     * Start Product Import
+     */
+    public static startProductImport<ThrowOnError extends boolean = true>(options: Options<productImportsStartProductImportData, ThrowOnError>) {
+        return (options.client ?? client).post<productImportsStartProductImportResponses, productImportsStartProductImportErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/product-imports/',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Read Product Import
+     */
+    public static readProductImport<ThrowOnError extends boolean = true>(options: Options<productImportsReadProductImportData, ThrowOnError>) {
+        return (options.client ?? client).get<productImportsReadProductImportResponses, productImportsReadProductImportErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/product-imports/{import_id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Read Product Import Errors
+     */
+    public static readProductImportErrors<ThrowOnError extends boolean = true>(options: Options<productImportsReadProductImportErrorsData, ThrowOnError>) {
+        return (options.client ?? client).get<productImportsReadProductImportErrorsResponses, productImportsReadProductImportErrorsErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/product-imports/{import_id}/errors',
+            ...options
+        });
+    }
+    
+    /**
+     * Retry Product Import
+     */
+    public static retryProductImport<ThrowOnError extends boolean = true>(options: Options<productImportsRetryProductImportData, ThrowOnError>) {
+        return (options.client ?? client).post<productImportsRetryProductImportResponses, productImportsRetryProductImportErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/product-imports/{import_id}/retry',
+            ...options
         });
     }
 }

@@ -217,6 +217,194 @@ export type ProductImageUploadRequest = {
 };
 
 /**
+ * ProductImportCreate
+ */
+export type ProductImportCreate = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Filename
+     */
+    filename: string;
+};
+
+/**
+ * ProductImportErrorPublic
+ */
+export type ProductImportErrorPublic = {
+    /**
+     * Line
+     */
+    line: number;
+    /**
+     * Sku
+     */
+    sku: string | null;
+    /**
+     * Message
+     */
+    message: string;
+};
+
+/**
+ * ProductImportErrorsPublic
+ */
+export type ProductImportErrorsPublic = {
+    /**
+     * Data
+     */
+    data: Array<ProductImportErrorPublic>;
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Truncated
+     */
+    truncated: boolean;
+};
+
+/**
+ * ProductImportPublic
+ */
+export type ProductImportPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Status
+     */
+    status: 'pending' | 'running' | 'completed' | 'failed';
+    /**
+     * Total Bytes
+     */
+    total_bytes: number;
+    /**
+     * Bytes Processed
+     */
+    bytes_processed: number;
+    /**
+     * Created Count
+     */
+    created_count: number;
+    /**
+     * Updated Count
+     */
+    updated_count: number;
+    /**
+     * Unchanged Count
+     */
+    unchanged_count: number;
+    /**
+     * Error Count
+     */
+    error_count: number;
+    /**
+     * Blank Count
+     */
+    blank_count: number;
+    /**
+     * Categories Created
+     */
+    categories_created: number;
+    /**
+     * Error Message
+     */
+    error_message: string | null;
+    /**
+     * Started At
+     */
+    started_at: string | null;
+    /**
+     * Finished At
+     */
+    finished_at: string | null;
+    /**
+     * File Deleted At
+     */
+    file_deleted_at: string | null;
+    /**
+     * Created By Email
+     */
+    created_by_email: string | null;
+    /**
+     * Progress
+     */
+    readonly progress: number;
+    /**
+     * Can Retry
+     */
+    readonly can_retry: boolean;
+};
+
+/**
+ * ProductImportUpload
+ */
+export type ProductImportUpload = {
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Fields
+     */
+    fields: {
+        [key: string]: string;
+    };
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Max Bytes
+     */
+    max_bytes: number;
+    /**
+     * Expires In
+     */
+    expires_in: number;
+};
+
+/**
+ * ProductImportUploadRequest
+ */
+export type ProductImportUploadRequest = {
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Size
+     */
+    size: number;
+};
+
+/**
+ * ProductImportsPublic
+ */
+export type ProductImportsPublic = {
+    /**
+     * Data
+     */
+    data: Array<ProductImportPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
  * ProductPublic
  */
 export type ProductPublic = {
@@ -502,6 +690,94 @@ export type ValidationError = {
     ctx?: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * ProductImportPublic
+ */
+export type ProductImportPublicWritable = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Status
+     */
+    status: 'pending' | 'running' | 'completed' | 'failed';
+    /**
+     * Total Bytes
+     */
+    total_bytes: number;
+    /**
+     * Bytes Processed
+     */
+    bytes_processed: number;
+    /**
+     * Created Count
+     */
+    created_count: number;
+    /**
+     * Updated Count
+     */
+    updated_count: number;
+    /**
+     * Unchanged Count
+     */
+    unchanged_count: number;
+    /**
+     * Error Count
+     */
+    error_count: number;
+    /**
+     * Blank Count
+     */
+    blank_count: number;
+    /**
+     * Categories Created
+     */
+    categories_created: number;
+    /**
+     * Error Message
+     */
+    error_message: string | null;
+    /**
+     * Started At
+     */
+    started_at: string | null;
+    /**
+     * Finished At
+     */
+    finished_at: string | null;
+    /**
+     * File Deleted At
+     */
+    file_deleted_at: string | null;
+    /**
+     * Created By Email
+     */
+    created_by_email: string | null;
+};
+
+/**
+ * ProductImportsPublic
+ */
+export type ProductImportsPublicWritable = {
+    /**
+     * Data
+     */
+    data: Array<ProductImportPublicWritable>;
+    /**
+     * Count
+     */
+    count: number;
 };
 
 /**
@@ -1280,6 +1556,189 @@ export type productCategoriesUpdateCategoryResponses = {
 };
 
 export type productCategoriesUpdateCategoryResponse = productCategoriesUpdateCategoryResponses[keyof productCategoriesUpdateCategoryResponses];
+
+export type productImportsPresignProductImportData = {
+    body: ProductImportUploadRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/product-imports/presign';
+};
+
+export type productImportsPresignProductImportErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type productImportsPresignProductImportError = productImportsPresignProductImportErrors[keyof productImportsPresignProductImportErrors];
+
+export type productImportsPresignProductImportResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProductImportUpload;
+};
+
+export type productImportsPresignProductImportResponse = productImportsPresignProductImportResponses[keyof productImportsPresignProductImportResponses];
+
+export type productImportsReadProductImportsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/product-imports/';
+};
+
+export type productImportsReadProductImportsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type productImportsReadProductImportsError = productImportsReadProductImportsErrors[keyof productImportsReadProductImportsErrors];
+
+export type productImportsReadProductImportsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProductImportsPublic;
+};
+
+export type productImportsReadProductImportsResponse = productImportsReadProductImportsResponses[keyof productImportsReadProductImportsResponses];
+
+export type productImportsStartProductImportData = {
+    body: ProductImportCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/product-imports/';
+};
+
+export type productImportsStartProductImportErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type productImportsStartProductImportError = productImportsStartProductImportErrors[keyof productImportsStartProductImportErrors];
+
+export type productImportsStartProductImportResponses = {
+    /**
+     * Successful Response
+     */
+    202: ProductImportPublic;
+};
+
+export type productImportsStartProductImportResponse = productImportsStartProductImportResponses[keyof productImportsStartProductImportResponses];
+
+export type productImportsReadProductImportData = {
+    body?: never;
+    path: {
+        /**
+         * Import Id
+         */
+        import_id: string;
+    };
+    query?: never;
+    url: '/api/v1/product-imports/{import_id}';
+};
+
+export type productImportsReadProductImportErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type productImportsReadProductImportError = productImportsReadProductImportErrors[keyof productImportsReadProductImportErrors];
+
+export type productImportsReadProductImportResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProductImportPublic;
+};
+
+export type productImportsReadProductImportResponse = productImportsReadProductImportResponses[keyof productImportsReadProductImportResponses];
+
+export type productImportsReadProductImportErrorsData = {
+    body?: never;
+    path: {
+        /**
+         * Import Id
+         */
+        import_id: string;
+    };
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/product-imports/{import_id}/errors';
+};
+
+export type productImportsReadProductImportErrorsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type productImportsReadProductImportErrorsError = productImportsReadProductImportErrorsErrors[keyof productImportsReadProductImportErrorsErrors];
+
+export type productImportsReadProductImportErrorsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProductImportErrorsPublic;
+};
+
+export type productImportsReadProductImportErrorsResponse = productImportsReadProductImportErrorsResponses[keyof productImportsReadProductImportErrorsResponses];
+
+export type productImportsRetryProductImportData = {
+    body?: never;
+    path: {
+        /**
+         * Import Id
+         */
+        import_id: string;
+    };
+    query?: never;
+    url: '/api/v1/product-imports/{import_id}/retry';
+};
+
+export type productImportsRetryProductImportErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type productImportsRetryProductImportError = productImportsRetryProductImportErrors[keyof productImportsRetryProductImportErrors];
+
+export type productImportsRetryProductImportResponses = {
+    /**
+     * Successful Response
+     */
+    202: ProductImportPublic;
+};
+
+export type productImportsRetryProductImportResponse = productImportsRetryProductImportResponses[keyof productImportsRetryProductImportResponses];
 
 export type utilsTestEmailData = {
     body?: never;
