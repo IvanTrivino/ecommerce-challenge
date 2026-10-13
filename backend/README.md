@@ -169,6 +169,34 @@ $ docker compose exec celery-worker celery -A app.core.celery_app call app.tasks
 
 Accepted trade-off: imports aren't queued (a second one gets a 409), and admin edits made during an import aren't coordinated with it. On the same SKU, whichever commits last wins. SKU inserts can't collide, because the upsert is atomic. See the spec, section 8.
 
+## Orders
+
+Customers build a cart and place orders, and admins fulfil them. See the [spec](docs/specs/checkout.md).
+
+The cart is the customer's single **Draft** order. Placing it runs the checkout in one transaction, and admins move placed orders on:
+
+```
+            "+ Add"             place (checkout)            admin: Complete
+  (none) ───────────▶ draft ───────────────────▶ in_progress ──────────────▶ completed
+                                                     │
+                                                     │ admin: Cancel (restock)
+                                                     ▼
+                                                 cancelled
+```
+
+- `POST /api/v1/cart/items` is "+ Add". `POST /api/v1/cart/place` takes the Draft's `order_id` and the `expected_total` the customer saw. It locks the order and then its products (in id order), checks stock and prices, decrements stock, fixes the prices and weights onto the lines, charges, and commits. Placing the same order twice returns the same result.
+- **Payments are mocked.** `MockPaymentsGateway` always approves, behind the `PaymentsGateway` protocol (`app/services/orders/payments.py`), so a real provider is a new adapter. Tests swap in declining and failing doubles through `get_payments_gateway`.
+- Admins list, cancel (restocks) and complete orders under `/api/v1/orders`. Customers read their own placed orders under `/api/v1/users/me/orders`.
+- **Emails go through an outbox.** The `order_notification` row is written in the same transaction as the state change, and the API then enqueues the Celery task `send_order_notification`. The `requeue-order-notifications` beat job (every minute) re-enqueues rows that are still pending, which covers a lost enqueue and retries with backoff. Delivery is at-least-once. Templates are React Email components (`packages/react-email/emails/order_*.tsx`) exported with `npx bun run email:export`.
+
+| Setting | Default | Purpose |
+|---|---|---|
+| `CART_MAX_ITEMS` | `50` | Distinct lines per cart |
+| `ORDER_CURRENCY` | `USD` | Currency stored on every order |
+| `ORDER_NOTIFICATION_REQUEUE_AFTER_SECONDS` | `120` | Wait before beat picks up a notification the API failed to enqueue |
+| `ORDER_NOTIFICATION_MAX_ATTEMPTS` | `5` | Sends before a notification is marked failed |
+| `ORDER_NOTIFICATION_BACKOFF_SECONDS` | `30` | First retry delay, doubled on each failed attempt |
+
 ## Email Templates
 
 The email templates are written with [React Email](https://react.email) in `./packages/react-email/`. The `emails` directory holds one component per email and the `ui` directory holds the shared components (layout, heading, button, link, callout).

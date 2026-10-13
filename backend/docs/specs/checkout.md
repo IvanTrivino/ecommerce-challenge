@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft |
+| **Status** | Implemented (backend) |
 | **Owner** | Ivan Trivino |
 | **Last updated** | 2026-10-12 |
 | **Components** | `backend` (new `order` / `cart_item` / `order_notification` tables, `cart` and `orders` APIs, checkout service, mocked payments gateway, Celery email task and beat job, email templates, migration `0006`), `frontend` (storefront cart, checkout and order pages, backoffice Orders page) |

@@ -2,7 +2,7 @@
 
 import { type Client, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, productCategoriesCreateCategoryData, productCategoriesCreateCategoryErrors, productCategoriesCreateCategoryResponses, productCategoriesDeleteCategoryData, productCategoriesDeleteCategoryErrors, productCategoriesDeleteCategoryResponses, productCategoriesReadCategoriesData, productCategoriesReadCategoriesErrors, productCategoriesReadCategoriesResponses, productCategoriesReadCategoryData, productCategoriesReadCategoryErrors, productCategoriesReadCategoryResponses, productCategoriesUpdateCategoryData, productCategoriesUpdateCategoryErrors, productCategoriesUpdateCategoryResponses, productImportsPresignProductImportData, productImportsPresignProductImportErrors, productImportsPresignProductImportResponses, productImportsReadProductImportData, productImportsReadProductImportErrors, productImportsReadProductImportErrorsData, productImportsReadProductImportErrorsErrors, productImportsReadProductImportErrorsResponses, productImportsReadProductImportResponses, productImportsReadProductImportsData, productImportsReadProductImportsErrors, productImportsReadProductImportsResponses, productImportsRetryProductImportData, productImportsRetryProductImportErrors, productImportsRetryProductImportResponses, productImportsStartProductImportData, productImportsStartProductImportErrors, productImportsStartProductImportResponses, productsCreateProductData, productsCreateProductErrors, productsCreateProductResponses, productsDeleteProductData, productsDeleteProductErrors, productsDeleteProductResponses, productsPresignProductImageData, productsPresignProductImageErrors, productsPresignProductImageResponses, productsReadProductData, productsReadProductErrors, productsReadProductResponses, productsReadProductsData, productsReadProductsErrors, productsReadProductsResponses, productsSearchProductsData, productsSearchProductsErrors, productsSearchProductsResponses, productsUpdateProductData, productsUpdateProductErrors, productsUpdateProductResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
+import type { cartAddCartItemData, cartAddCartItemErrors, cartAddCartItemResponses, cartPlaceOrderData, cartPlaceOrderErrors, cartPlaceOrderResponses, cartReadCartData, cartReadCartResponses, cartRemoveCartItemData, cartRemoveCartItemErrors, cartRemoveCartItemResponses, cartUpdateCartItemData, cartUpdateCartItemErrors, cartUpdateCartItemResponses, loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, ordersCancelOrderData, ordersCancelOrderErrors, ordersCancelOrderResponses, ordersCompleteOrderData, ordersCompleteOrderErrors, ordersCompleteOrderResponses, ordersReadOrderData, ordersReadOrderErrors, ordersReadOrderResponses, ordersReadOrdersData, ordersReadOrdersErrors, ordersReadOrdersResponses, productCategoriesCreateCategoryData, productCategoriesCreateCategoryErrors, productCategoriesCreateCategoryResponses, productCategoriesDeleteCategoryData, productCategoriesDeleteCategoryErrors, productCategoriesDeleteCategoryResponses, productCategoriesReadCategoriesData, productCategoriesReadCategoriesErrors, productCategoriesReadCategoriesResponses, productCategoriesReadCategoryData, productCategoriesReadCategoryErrors, productCategoriesReadCategoryResponses, productCategoriesUpdateCategoryData, productCategoriesUpdateCategoryErrors, productCategoriesUpdateCategoryResponses, productImportsPresignProductImportData, productImportsPresignProductImportErrors, productImportsPresignProductImportResponses, productImportsReadProductImportData, productImportsReadProductImportErrors, productImportsReadProductImportErrorsData, productImportsReadProductImportErrorsErrors, productImportsReadProductImportErrorsResponses, productImportsReadProductImportResponses, productImportsReadProductImportsData, productImportsReadProductImportsErrors, productImportsReadProductImportsResponses, productImportsRetryProductImportData, productImportsRetryProductImportErrors, productImportsRetryProductImportResponses, productImportsStartProductImportData, productImportsStartProductImportErrors, productImportsStartProductImportResponses, productsCreateProductData, productsCreateProductErrors, productsCreateProductResponses, productsDeleteProductData, productsDeleteProductErrors, productsDeleteProductResponses, productsPresignProductImageData, productsPresignProductImageErrors, productsPresignProductImageResponses, productsReadProductData, productsReadProductErrors, productsReadProductResponses, productsReadProductsData, productsReadProductsErrors, productsReadProductsResponses, productsSearchProductsData, productsSearchProductsErrors, productsSearchProductsResponses, productsUpdateProductData, productsUpdateProductErrors, productsUpdateProductResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadMyOrderData, usersReadMyOrderErrors, usersReadMyOrderResponses, usersReadMyOrdersData, usersReadMyOrdersErrors, usersReadMyOrdersResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -176,6 +176,34 @@ export class UsersService {
                 'Content-Type': 'application/json',
                 ...options.headers
             }
+        });
+    }
+    
+    /**
+     * Read My Orders
+     *
+     * List the current user's placed orders, newest first.
+     */
+    public static readMyOrders<ThrowOnError extends boolean = true>(options?: Options<usersReadMyOrdersData, ThrowOnError>) {
+        return (options?.client ?? client).get<usersReadMyOrdersResponses, usersReadMyOrdersErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/users/me/orders',
+            ...options
+        });
+    }
+    
+    /**
+     * Read My Order
+     *
+     * Get one of the current user's placed orders.
+     */
+    public static readMyOrder<ThrowOnError extends boolean = true>(options: Options<usersReadMyOrderData, ThrowOnError>) {
+        return (options.client ?? client).get<usersReadMyOrderResponses, usersReadMyOrderErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/users/me/orders/{order_id}',
+            ...options
         });
     }
     
@@ -483,6 +511,130 @@ export class ProductImportsService {
             responseType: 'json',
             security: [{ scheme: 'bearer', type: 'http' }],
             url: '/api/v1/product-imports/{import_id}/retry',
+            ...options
+        });
+    }
+}
+
+export class CartService {
+    /**
+     * Read Cart
+     */
+    public static readCart<ThrowOnError extends boolean = true>(options?: Options<cartReadCartData, ThrowOnError>) {
+        return (options?.client ?? client).get<cartReadCartResponses, unknown, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/cart/',
+            ...options
+        });
+    }
+    
+    /**
+     * Add Cart Item
+     */
+    public static addCartItem<ThrowOnError extends boolean = true>(options: Options<cartAddCartItemData, ThrowOnError>) {
+        return (options.client ?? client).post<cartAddCartItemResponses, cartAddCartItemErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/cart/items',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Remove Cart Item
+     */
+    public static removeCartItem<ThrowOnError extends boolean = true>(options: Options<cartRemoveCartItemData, ThrowOnError>) {
+        return (options.client ?? client).delete<cartRemoveCartItemResponses, cartRemoveCartItemErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/cart/items/{item_id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Update Cart Item
+     */
+    public static updateCartItem<ThrowOnError extends boolean = true>(options: Options<cartUpdateCartItemData, ThrowOnError>) {
+        return (options.client ?? client).patch<cartUpdateCartItemResponses, cartUpdateCartItemErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/cart/items/{item_id}',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Place Order
+     */
+    public static placeOrder<ThrowOnError extends boolean = true>(options: Options<cartPlaceOrderData, ThrowOnError>) {
+        return (options.client ?? client).post<cartPlaceOrderResponses, cartPlaceOrderErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/cart/place',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+}
+
+export class OrdersService {
+    /**
+     * Read Orders
+     */
+    public static readOrders<ThrowOnError extends boolean = true>(options?: Options<ordersReadOrdersData, ThrowOnError>) {
+        return (options?.client ?? client).get<ordersReadOrdersResponses, ordersReadOrdersErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/orders/',
+            ...options
+        });
+    }
+    
+    /**
+     * Read Order
+     */
+    public static readOrder<ThrowOnError extends boolean = true>(options: Options<ordersReadOrderData, ThrowOnError>) {
+        return (options.client ?? client).get<ordersReadOrderResponses, ordersReadOrderErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/orders/{order_id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Cancel Order
+     */
+    public static cancelOrder<ThrowOnError extends boolean = true>(options: Options<ordersCancelOrderData, ThrowOnError>) {
+        return (options.client ?? client).post<ordersCancelOrderResponses, ordersCancelOrderErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/orders/{order_id}/cancel',
+            ...options
+        });
+    }
+    
+    /**
+     * Complete Order
+     */
+    public static completeOrder<ThrowOnError extends boolean = true>(options: Options<ordersCompleteOrderData, ThrowOnError>) {
+        return (options.client ?? client).post<ordersCompleteOrderResponses, ordersCompleteOrderErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/orders/{order_id}/complete',
             ...options
         });
     }

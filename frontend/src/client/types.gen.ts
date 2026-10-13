@@ -35,6 +35,106 @@ export type Body_login_login_access_token = {
 };
 
 /**
+ * CartItemAdd
+ */
+export type CartItemAdd = {
+    /**
+     * Product Id
+     */
+    product_id: string;
+    /**
+     * Quantity
+     */
+    quantity?: number;
+};
+
+/**
+ * CartItemPublic
+ */
+export type CartItemPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Product Id
+     */
+    product_id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Sku
+     */
+    sku: string;
+    /**
+     * Image Url
+     */
+    image_url: string | null;
+    /**
+     * Unit Price
+     */
+    unit_price: string;
+    /**
+     * Quantity
+     */
+    quantity: number;
+    /**
+     * Line Total
+     */
+    line_total: string;
+    /**
+     * Available
+     */
+    available: boolean;
+    /**
+     * Available Stock
+     */
+    available_stock: number;
+};
+
+/**
+ * CartItemUpdate
+ */
+export type CartItemUpdate = {
+    /**
+     * Quantity
+     */
+    quantity: number;
+};
+
+/**
+ * CartPublic
+ */
+export type CartPublic = {
+    /**
+     * Id
+     */
+    id: string | null;
+    /**
+     * Items
+     */
+    items: Array<CartItemPublic>;
+    /**
+     * Item Count
+     */
+    item_count: number;
+    /**
+     * Total Price
+     */
+    total_price: string;
+    /**
+     * Total Weight
+     */
+    total_weight: string;
+    /**
+     * Can Place
+     */
+    can_place: boolean;
+};
+
+/**
  * HTTPValidationError
  */
 export type HTTPValidationError = {
@@ -66,6 +166,200 @@ export type NewPassword = {
      * New Password
      */
     new_password: string;
+};
+
+/**
+ * OrderItemPublic
+ */
+export type OrderItemPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Product Id
+     */
+    product_id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Sku
+     */
+    sku: string;
+    /**
+     * Quantity
+     */
+    quantity: number;
+    /**
+     * Unit Price
+     */
+    unit_price: string | null;
+    /**
+     * Unit Weight
+     */
+    unit_weight: string | null;
+    /**
+     * Line Total
+     */
+    line_total: string | null;
+};
+
+/**
+ * OrderPublic
+ */
+export type OrderPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Number
+     */
+    number: string;
+    /**
+     * State
+     */
+    state: 'draft' | 'in_progress' | 'completed' | 'cancelled';
+    /**
+     * User Id
+     */
+    user_id: string;
+    /**
+     * User Email
+     */
+    user_email: string;
+    /**
+     * Total Price
+     */
+    total_price: string | null;
+    /**
+     * Total Weight
+     */
+    total_weight: string | null;
+    /**
+     * Currency
+     */
+    currency: string;
+    /**
+     * Item Count
+     */
+    item_count: number;
+    /**
+     * Payment Reference
+     */
+    payment_reference: string | null;
+    /**
+     * Placed At
+     */
+    placed_at: string | null;
+    /**
+     * Completed At
+     */
+    completed_at: string | null;
+    /**
+     * Cancelled At
+     */
+    cancelled_at: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Items
+     */
+    items: Array<OrderItemPublic>;
+};
+
+/**
+ * OrderSummaryPublic
+ */
+export type OrderSummaryPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Number
+     */
+    number: string;
+    /**
+     * State
+     */
+    state: 'draft' | 'in_progress' | 'completed' | 'cancelled';
+    /**
+     * User Id
+     */
+    user_id: string;
+    /**
+     * User Email
+     */
+    user_email: string;
+    /**
+     * Total Price
+     */
+    total_price: string | null;
+    /**
+     * Total Weight
+     */
+    total_weight: string | null;
+    /**
+     * Currency
+     */
+    currency: string;
+    /**
+     * Item Count
+     */
+    item_count: number;
+    /**
+     * Payment Reference
+     */
+    payment_reference: string | null;
+    /**
+     * Placed At
+     */
+    placed_at: string | null;
+    /**
+     * Completed At
+     */
+    completed_at: string | null;
+    /**
+     * Cancelled At
+     */
+    cancelled_at: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
+ * OrdersPublic
+ */
+export type OrdersPublic = {
+    /**
+     * Data
+     */
+    data: Array<OrderSummaryPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * PlaceOrderRequest
+ */
+export type PlaceOrderRequest = {
+    /**
+     * Order Id
+     */
+    order_id: string;
+    /**
+     * Expected Total
+     */
+    expected_total: number | string;
 };
 
 /**
@@ -1077,6 +1371,70 @@ export type usersUpdatePasswordMeResponses = {
 
 export type usersUpdatePasswordMeResponse = usersUpdatePasswordMeResponses[keyof usersUpdatePasswordMeResponses];
 
+export type usersReadMyOrdersData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/users/me/orders';
+};
+
+export type usersReadMyOrdersErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type usersReadMyOrdersError = usersReadMyOrdersErrors[keyof usersReadMyOrdersErrors];
+
+export type usersReadMyOrdersResponses = {
+    /**
+     * Successful Response
+     */
+    200: OrdersPublic;
+};
+
+export type usersReadMyOrdersResponse = usersReadMyOrdersResponses[keyof usersReadMyOrdersResponses];
+
+export type usersReadMyOrderData = {
+    body?: never;
+    path: {
+        /**
+         * Order Id
+         */
+        order_id: string;
+    };
+    query?: never;
+    url: '/api/v1/users/me/orders/{order_id}';
+};
+
+export type usersReadMyOrderErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type usersReadMyOrderError = usersReadMyOrderErrors[keyof usersReadMyOrderErrors];
+
+export type usersReadMyOrderResponses = {
+    /**
+     * Successful Response
+     */
+    200: OrderPublic;
+};
+
+export type usersReadMyOrderResponse = usersReadMyOrderResponses[keyof usersReadMyOrderResponses];
+
 export type usersRegisterUserData = {
     body: UserRegister;
     path?: never;
@@ -1739,6 +2097,260 @@ export type productImportsRetryProductImportResponses = {
 };
 
 export type productImportsRetryProductImportResponse = productImportsRetryProductImportResponses[keyof productImportsRetryProductImportResponses];
+
+export type cartReadCartData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/cart/';
+};
+
+export type cartReadCartResponses = {
+    /**
+     * Successful Response
+     */
+    200: CartPublic;
+};
+
+export type cartReadCartResponse = cartReadCartResponses[keyof cartReadCartResponses];
+
+export type cartAddCartItemData = {
+    body: CartItemAdd;
+    path?: never;
+    query?: never;
+    url: '/api/v1/cart/items';
+};
+
+export type cartAddCartItemErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type cartAddCartItemError = cartAddCartItemErrors[keyof cartAddCartItemErrors];
+
+export type cartAddCartItemResponses = {
+    /**
+     * Successful Response
+     */
+    200: CartPublic;
+};
+
+export type cartAddCartItemResponse = cartAddCartItemResponses[keyof cartAddCartItemResponses];
+
+export type cartRemoveCartItemData = {
+    body?: never;
+    path: {
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/api/v1/cart/items/{item_id}';
+};
+
+export type cartRemoveCartItemErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type cartRemoveCartItemError = cartRemoveCartItemErrors[keyof cartRemoveCartItemErrors];
+
+export type cartRemoveCartItemResponses = {
+    /**
+     * Successful Response
+     */
+    200: CartPublic;
+};
+
+export type cartRemoveCartItemResponse = cartRemoveCartItemResponses[keyof cartRemoveCartItemResponses];
+
+export type cartUpdateCartItemData = {
+    body: CartItemUpdate;
+    path: {
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/api/v1/cart/items/{item_id}';
+};
+
+export type cartUpdateCartItemErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type cartUpdateCartItemError = cartUpdateCartItemErrors[keyof cartUpdateCartItemErrors];
+
+export type cartUpdateCartItemResponses = {
+    /**
+     * Successful Response
+     */
+    200: CartPublic;
+};
+
+export type cartUpdateCartItemResponse = cartUpdateCartItemResponses[keyof cartUpdateCartItemResponses];
+
+export type cartPlaceOrderData = {
+    body: PlaceOrderRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/cart/place';
+};
+
+export type cartPlaceOrderErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type cartPlaceOrderError = cartPlaceOrderErrors[keyof cartPlaceOrderErrors];
+
+export type cartPlaceOrderResponses = {
+    /**
+     * Successful Response
+     */
+    200: OrderPublic;
+};
+
+export type cartPlaceOrderResponse = cartPlaceOrderResponses[keyof cartPlaceOrderResponses];
+
+export type ordersReadOrdersData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * State
+         */
+        state?: Array<'draft' | 'in_progress' | 'completed' | 'cancelled'> | null;
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/orders/';
+};
+
+export type ordersReadOrdersErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type ordersReadOrdersError = ordersReadOrdersErrors[keyof ordersReadOrdersErrors];
+
+export type ordersReadOrdersResponses = {
+    /**
+     * Successful Response
+     */
+    200: OrdersPublic;
+};
+
+export type ordersReadOrdersResponse = ordersReadOrdersResponses[keyof ordersReadOrdersResponses];
+
+export type ordersReadOrderData = {
+    body?: never;
+    path: {
+        /**
+         * Order Id
+         */
+        order_id: string;
+    };
+    query?: never;
+    url: '/api/v1/orders/{order_id}';
+};
+
+export type ordersReadOrderErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type ordersReadOrderError = ordersReadOrderErrors[keyof ordersReadOrderErrors];
+
+export type ordersReadOrderResponses = {
+    /**
+     * Successful Response
+     */
+    200: OrderPublic;
+};
+
+export type ordersReadOrderResponse = ordersReadOrderResponses[keyof ordersReadOrderResponses];
+
+export type ordersCancelOrderData = {
+    body?: never;
+    path: {
+        /**
+         * Order Id
+         */
+        order_id: string;
+    };
+    query?: never;
+    url: '/api/v1/orders/{order_id}/cancel';
+};
+
+export type ordersCancelOrderErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type ordersCancelOrderError = ordersCancelOrderErrors[keyof ordersCancelOrderErrors];
+
+export type ordersCancelOrderResponses = {
+    /**
+     * Successful Response
+     */
+    200: OrderPublic;
+};
+
+export type ordersCancelOrderResponse = ordersCancelOrderResponses[keyof ordersCancelOrderResponses];
+
+export type ordersCompleteOrderData = {
+    body?: never;
+    path: {
+        /**
+         * Order Id
+         */
+        order_id: string;
+    };
+    query?: never;
+    url: '/api/v1/orders/{order_id}/complete';
+};
+
+export type ordersCompleteOrderErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type ordersCompleteOrderError = ordersCompleteOrderErrors[keyof ordersCompleteOrderErrors];
+
+export type ordersCompleteOrderResponses = {
+    /**
+     * Successful Response
+     */
+    200: OrderPublic;
+};
+
+export type ordersCompleteOrderResponse = ordersCompleteOrderResponses[keyof ordersCompleteOrderResponses];
 
 export type utilsTestEmailData = {
     body?: never;
