@@ -5,6 +5,13 @@ import {
   deleteCategory,
   deleteProductsInCategory,
 } from "./utils/api"
+import {
+  type Customer,
+  createCustomer,
+  createStockedProducts,
+  customerApi,
+  customerPage,
+} from "./utils/orders"
 
 let category: Awaited<ReturnType<typeof createCategory>>
 let product: Awaited<ReturnType<typeof createProduct>>
@@ -288,5 +295,129 @@ test.describe("Keyboard", () => {
     await page.keyboard.press("ArrowDown")
     await page.keyboard.press("Escape")
     await expect(menu).toBeFocused()
+  })
+})
+
+test.describe("Cart and orders", () => {
+  let customer: Customer
+  let order: Awaited<
+    ReturnType<Awaited<ReturnType<typeof customerApi>>["place"]>
+  >
+  let cartProducts: Awaited<
+    ReturnType<typeof createStockedProducts>
+  >["products"]
+
+  test.beforeAll(async () => {
+    customer = await createCustomer()
+    const api = await customerApi(customer)
+    const placed = await createStockedProducts(1)
+    await api.add(placed.products[0].id)
+    order = await api.place()
+    cartProducts = (await createStockedProducts(2)).products
+    for (const product of cartProducts) await api.add(product.id)
+  })
+
+  test("Pages have no horizontal scroll on mobile", async ({ browser }) => {
+    const { context, page } = await customerPage(browser, customer, {
+      width: 360,
+      height: 780,
+    })
+    for (const url of [
+      "/cart",
+      "/checkout",
+      "/orders",
+      `/orders/${order.id}`,
+    ]) {
+      await page.goto(url)
+      await page.waitForLoadState("networkidle")
+      expect(await hasHorizontalScroll(page), url).toBe(false)
+    }
+    await context.close()
+  })
+
+  test.describe("Admin", () => {
+    test.use({ viewport: { width: 360, height: 780 } })
+
+    test("Backoffice orders have no horizontal page scroll", async ({
+      page,
+    }) => {
+      for (const url of ["/admin/orders", `/admin/orders/${order.id}`]) {
+        await page.goto(url)
+        await page.waitForLoadState("networkidle")
+        expect(await hasHorizontalScroll(page), url).toBe(false)
+      }
+    })
+  })
+
+  test("Interactive elements expose accessible names", async ({
+    browser,
+    page,
+  }) => {
+    const customerSession = await customerPage(browser, customer)
+    for (const url of [
+      "/cart",
+      "/checkout",
+      "/orders",
+      `/orders/${order.id}`,
+    ]) {
+      await customerSession.page.goto(url)
+      await customerSession.page.waitForLoadState("networkidle")
+      await expectAccessibleNames(customerSession.page)
+    }
+    await customerSession.context.close()
+
+    for (const url of ["/admin/orders", `/admin/orders/${order.id}`]) {
+      await page.goto(url)
+      await page.waitForLoadState("networkidle")
+      await expectAccessibleNames(page)
+    }
+  })
+
+  test("The cart is operable with the keyboard", async ({ browser }) => {
+    const { context, page } = await customerPage(browser, customer)
+    const [first, second] = cartProducts
+    await page.goto("/cart")
+    const total = page.getByTestId("cart-total")
+    const before = await total.innerText()
+
+    const quantity = page.getByLabel(`Quantity for ${first.name}`, {
+      exact: true,
+    })
+    await quantity.focus()
+    await page.keyboard.press("ControlOrMeta+a")
+    await page.keyboard.type("2")
+    await expect(total).not.toHaveText(before)
+
+    const remove = page.getByRole("button", {
+      name: `Remove ${second.name}`,
+      exact: true,
+    })
+    await remove.focus()
+    await page.keyboard.press("Enter")
+    await expect(page.getByTestId("cart-line")).toHaveCount(1)
+    await context.close()
+  })
+
+  test("Cancelling an order is operable with the keyboard", async ({
+    page,
+  }) => {
+    await page.goto("/admin/orders")
+    const cancel = page.getByRole("button", {
+      name: `Cancel order ${order.number}`,
+    })
+    await expect(async () => {
+      await cancel.focus()
+      await page.keyboard.press("Enter")
+      await expect(page.getByRole("dialog")).toBeVisible({ timeout: 1000 })
+    }).toPass()
+    expect(
+      await page.evaluate(
+        () => !!document.activeElement?.closest("[role=dialog]"),
+      ),
+    ).toBe(true)
+
+    await page.keyboard.press("Escape")
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+    await expect(cancel).toBeFocused()
   })
 })

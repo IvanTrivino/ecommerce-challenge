@@ -1,10 +1,12 @@
 import {
   LoginService,
+  OrdersService,
   ProductCategoriesService,
   type ProductCategoryCreate,
   type ProductCreate,
   ProductImportsService,
   ProductsService,
+  type ProductUpdate,
   UsersService,
 } from "../../src/client"
 import { client } from "../../src/client/client.gen"
@@ -87,6 +89,23 @@ export const createProduct = async (
     },
   })
   return response.data
+}
+
+export const updateProduct = async (id: string, body: ProductUpdate) => {
+  await asAdmin()
+  return (
+    await ProductsService.updateProduct({ path: { product_id: id }, body })
+  ).data
+}
+
+export const readProduct = async (id: string) => {
+  await asAdmin()
+  return (await ProductsService.readProduct({ path: { product_id: id } })).data
+}
+
+export const cancelOrderAsAdmin = async (id: string) => {
+  await asAdmin()
+  return (await OrdersService.cancelOrder({ path: { order_id: id } })).data
 }
 
 export const deleteProduct = async (id: string) => {
