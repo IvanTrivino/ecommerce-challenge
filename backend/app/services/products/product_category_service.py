@@ -17,7 +17,6 @@ class ProductCategoryService:
     def __init__(self, repo: ProductCategoryRepository) -> None:
         self.repo = repo
 
-    # Queries
     @cached(PRODUCT_CATEGORIES, ProductCategoryPublic)
     def get_by_id(self, category_id: uuid.UUID) -> ProductCategoryPublic:
         return ProductCategoryPublic.model_validate(self._get(category_id))
@@ -30,10 +29,10 @@ class ProductCategoryService:
             count=self.repo.count(),
         )
 
-    # Commands
     @invalidates(PRODUCT_CATEGORIES)
     def create_category(self, category_in: ProductCategoryCreate) -> ProductCategory:
         self._ensure_code_available(category_in.code)
+        self._ensure_name_available(category_in.name)
         return self.repo.save(ProductCategory(**category_in.model_dump()))
 
     @invalidates(PRODUCT_CATEGORIES)
@@ -44,6 +43,8 @@ class ProductCategoryService:
         data = category_in.model_dump(exclude_unset=True, exclude_none=True)
         if "code" in data:
             self._ensure_code_available(data["code"], category_id)
+        if "name" in data:
+            self._ensure_name_available(data["name"], category_id)
         for field, value in data.items():
             setattr(category, field, value)
         return self.repo.save(category)
@@ -55,7 +56,6 @@ class ProductCategoryService:
             raise ConflictError("Cannot delete a category that still has products")
         self.repo.delete(category)
 
-    # Helpers
     def _get(self, category_id: uuid.UUID) -> ProductCategory:
         category = self.repo.get(category_id)
         if not category:
@@ -68,3 +68,10 @@ class ProductCategoryService:
         existing = self.repo.get_by_code(code)
         if existing and existing.id != category_id:
             raise ConflictError("A category with this code already exists")
+
+    def _ensure_name_available(
+        self, name: str, category_id: uuid.UUID | None = None
+    ) -> None:
+        existing = self.repo.get_by_name(name)
+        if existing and existing.id != category_id:
+            raise ConflictError("A category with this name already exists")

@@ -13,6 +13,12 @@ class ProductCategory(Base):
             unique=True,
             postgresql_where=text("NOT is_deleted"),
         ),
+        Index(
+            "ix_product_category_name",
+            text("lower(name)"),
+            unique=True,
+            postgresql_where=text("NOT is_deleted"),
+        ),
     )
 
     name: Mapped[str] = mapped_column(String(255))

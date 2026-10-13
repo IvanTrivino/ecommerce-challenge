@@ -5,9 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.unitofwork import UOWTransaction
 
 from app.models import OutboxEvent, OutboxTopic, Product, ProductCategory
-
-PRODUCT_SEARCH_FIELDS = ("name", "description", "sku", "category_uuid", "is_deleted")
-CATEGORY_SEARCH_FIELDS = ("name", "is_deleted")
+from app.outbox.fields import CATEGORY_SEARCH_FIELDS, PRODUCT_SEARCH_FIELDS
 
 
 def _changed(obj: object, fields: tuple[str, ...]) -> bool:

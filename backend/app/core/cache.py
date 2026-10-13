@@ -94,28 +94,24 @@ def cached[**P, R](
     return decorator
 
 
+def invalidate_quietly(*namespaces: CacheNamespace) -> None:
+    for namespace in namespaces:
+        try:
+            namespace.invalidate()
+        except RedisError:
+            logger.warning(
+                "Cache invalidation failed for %s", namespace.name, exc_info=True
+            )
+
+
 def invalidates[**P, R](
     *namespaces: CacheNamespace,
 ) -> Callable[[Callable[P, R]], Callable[P, R]]:
-    """Invalidate `namespaces` after the decorated function succeeds.
-
-    If Redis is unavailable the failure is logged and staleness is bounded by
-    the namespace TTL.
-    """
-
     def decorator(func: Callable[P, R]) -> Callable[P, R]:
         @wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             result = func(*args, **kwargs)
-            for namespace in namespaces:
-                try:
-                    namespace.invalidate()
-                except RedisError:
-                    logger.warning(
-                        "Cache invalidation failed for %s",
-                        namespace.name,
-                        exc_info=True,
-                    )
+            invalidate_quietly(*namespaces)
             return result
 
         return wrapper

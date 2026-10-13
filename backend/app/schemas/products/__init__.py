@@ -17,6 +17,16 @@ from app.schemas.products.product_image import (
     ProductImageUpload,
     ProductImageUploadRequest,
 )
+from app.schemas.products.product_import import (
+    ProductImportCreate,
+    ProductImportErrorPublic,
+    ProductImportErrorsPublic,
+    ProductImportPublic,
+    ProductImportsPublic,
+    ProductImportStatusLiteral,
+    ProductImportUpload,
+    ProductImportUploadRequest,
+)
 
 __all__ = [
     "ProductBase",
@@ -29,6 +39,14 @@ __all__ = [
     "ProductImageContentType",
     "ProductImageUpload",
     "ProductImageUploadRequest",
+    "ProductImportCreate",
+    "ProductImportErrorPublic",
+    "ProductImportErrorsPublic",
+    "ProductImportPublic",
+    "ProductImportStatusLiteral",
+    "ProductImportUpload",
+    "ProductImportUploadRequest",
+    "ProductImportsPublic",
     "ProductPublic",
     "ProductUpdate",
     "ProductsPublic",

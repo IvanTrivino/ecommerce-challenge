@@ -18,10 +18,14 @@ def _service(db: Session) -> ProductCategoryService:
 def test_create_category_and_duplicate_code(db: Session) -> None:
     code = random_lower_string()[:20]
     service = _service(db)
-    category = service.create_category(ProductCategoryCreate(name="Shoes", code=code))
+    category = service.create_category(
+        ProductCategoryCreate(name=random_lower_string(), code=code)
+    )
     assert category.code == code
     with pytest.raises(ConflictError):
-        service.create_category(ProductCategoryCreate(name="Other", code=code))
+        service.create_category(
+            ProductCategoryCreate(name=random_lower_string(), code=code)
+        )
 
 
 def test_get_by_id_not_found(db: Session) -> None:
@@ -39,8 +43,9 @@ def test_list_categories(db: Session) -> None:
 def test_update_category(db: Session) -> None:
     category = create_random_category(db)
     service = _service(db)
-    updated = service.update_category(category.id, ProductCategoryUpdate(name="New"))
-    assert updated.name == "New"
+    new_name = random_lower_string()
+    updated = service.update_category(category.id, ProductCategoryUpdate(name=new_name))
+    assert updated.name == new_name
     assert updated.code == category.code
     # keeping its own code is not a conflict
     service.update_category(category.id, ProductCategoryUpdate(code=category.code))
@@ -64,3 +69,23 @@ def test_delete_category_with_products(db: Session) -> None:
     product = create_random_product(db)
     with pytest.raises(ConflictError):
         _service(db).delete_category(product.category_uuid)
+
+
+def test_category_names_are_unique_ignoring_case(db: Session) -> None:
+    service = _service(db)
+    name = f"Electronics {random_lower_string()}"
+    category = service.create_category(
+        ProductCategoryCreate(name=name, code=random_lower_string()[:20])
+    )
+
+    with pytest.raises(ConflictError, match="name already exists"):
+        service.create_category(
+            ProductCategoryCreate(name=name.lower(), code=random_lower_string()[:20])
+        )
+
+    # renaming a category to its own name in another case is not a conflict
+    service.update_category(category.id, ProductCategoryUpdate(name=name.upper()))
+
+    other = create_random_category(db)
+    with pytest.raises(ConflictError, match="name already exists"):
+        service.update_category(other.id, ProductCategoryUpdate(name=name))

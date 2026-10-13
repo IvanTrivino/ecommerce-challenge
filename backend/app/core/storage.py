@@ -15,6 +15,7 @@ from botocore.exceptions import ClientError, EndpointConnectionError
 from app.core.config import settings
 
 PRODUCT_IMAGES_PREFIX = "products/"
+PRODUCT_IMPORTS_PREFIX = "imports/"
 _NOT_FOUND_CODES = ("404", "NoSuchKey", "NotFound")
 
 if TYPE_CHECKING:
@@ -92,12 +93,22 @@ def presigned_url(key: str, expires_in: int = 3600) -> str:
         ExpiresIn=expires_in,
     )
 
+
 @dataclass(frozen=True)
 class StoredObject:
     key: str
     size: int
     content_type: str | None
     last_modified: datetime
+    etag: str | None = None
+
+
+class ObjectNotFoundError(Exception):
+    pass
+
+
+class ObjectChangedError(Exception):
+    pass
 
 
 def _public_read_policy(bucket: str) -> dict[str, Any]:
@@ -135,15 +146,17 @@ def ensure_product_images_bucket() -> None:
     )
 
 
-def product_images_public_url() -> str:
-    """Browser-reachable URL of the images bucket root, without a trailing slash."""
-    bucket = settings.S3_PRODUCT_IMAGES_BUCKET
-    if settings.S3_PRODUCT_IMAGES_PUBLIC_URL:
-        return settings.S3_PRODUCT_IMAGES_PUBLIC_URL.rstrip("/")
+def browser_bucket_url(bucket: str) -> str:
     endpoint = settings.S3_PUBLIC_ENDPOINT_URL or settings.S3_ENDPOINT_URL
     if endpoint:
         return f"{endpoint.rstrip('/')}/{bucket}"
     return f"https://{bucket}.s3.{settings.S3_REGION}.amazonaws.com"
+
+
+def product_images_public_url() -> str:
+    if settings.S3_PRODUCT_IMAGES_PUBLIC_URL:
+        return settings.S3_PRODUCT_IMAGES_PUBLIC_URL.rstrip("/")
+    return browser_bucket_url(settings.S3_PRODUCT_IMAGES_BUCKET)
 
 
 def product_image_url(key: str) -> str:
@@ -178,6 +191,7 @@ def head_object(bucket: str, key: str) -> StoredObject | None:
         size=response["ContentLength"],
         content_type=response.get("ContentType"),
         last_modified=response["LastModified"],
+        etag=response.get("ETag"),
     )
 
 
@@ -213,3 +227,42 @@ def delete_objects(bucket: str, keys: Sequence[str]) -> None:
                 bucket,
                 error.get("Message"),
             )
+
+
+def ensure_product_imports_bucket() -> None:
+    bucket = settings.S3_PRODUCT_IMPORTS_BUCKET
+    ensure_bucket(bucket)
+    get_s3().put_bucket_cors(
+        Bucket=bucket,
+        CORSConfiguration={
+            "CORSRules": [
+                {
+                    "AllowedOrigins": [settings.FRONTEND_HOST],
+                    "AllowedMethods": ["POST"],
+                    "AllowedHeaders": ["*"],
+                    "MaxAgeSeconds": 3600,
+                }
+            ]
+        },
+    )
+
+
+def iter_object_chunks(
+    bucket: str, key: str, *, start: int, etag: str, chunk_size: int = 64 * 1024
+) -> Iterator[bytes]:
+    try:
+        response = get_s3().get_object(
+            Bucket=bucket, Key=key, Range=f"bytes={start}-", IfMatch=etag
+        )
+    except ClientError as exc:
+        code = exc.response["Error"]["Code"]
+        if code in _NOT_FOUND_CODES:
+            raise ObjectNotFoundError(key) from exc
+        if code in ("PreconditionFailed", "412"):
+            raise ObjectChangedError(key) from exc
+        raise
+    body = response["Body"]
+    try:
+        yield from body.iter_chunks(chunk_size)
+    finally:
+        body.close()

@@ -33,4 +33,12 @@ celery_app.conf.beat_schedule = {
         "task": "app.tasks.sweep_product_images",
         "schedule": crontab(hour=3, minute=30),
     },
+    "sweep-product-import-files-daily": {
+        "task": "app.tasks.sweep_product_import_files",
+        "schedule": crontab(hour=3, minute=45),
+    },
+    "reap-stale-product-imports": {
+        "task": "app.tasks.reap_stale_product_imports",
+        "schedule": crontab(minute="*/5"),
+    },
 }

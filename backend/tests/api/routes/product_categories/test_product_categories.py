@@ -31,17 +31,19 @@ def test_writes_require_superuser(
 def test_superuser_crud_flow(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
-    body = {"name": "Shoes", "code": random_lower_string()[:20]}
+    name = random_lower_string()
+    body = {"name": name, "code": random_lower_string()[:20]}
     created = client.post(f"{URL}/", json=body, headers=superuser_token_headers)
     assert created.status_code == 200
     category_id = created.json()["id"]
 
-    assert client.get(f"{URL}/{category_id}").json()["name"] == "Shoes"  # cached
+    assert client.get(f"{URL}/{category_id}").json()["name"] == name  # cached
+    boots = random_lower_string()
     updated = client.patch(
-        f"{URL}/{category_id}", json={"name": "Boots"}, headers=superuser_token_headers
+        f"{URL}/{category_id}", json={"name": boots}, headers=superuser_token_headers
     )
     assert updated.status_code == 200
-    assert client.get(f"{URL}/{category_id}").json()["name"] == "Boots"  # invalidated
+    assert client.get(f"{URL}/{category_id}").json()["name"] == boots  # invalidated
 
     deleted = client.delete(f"{URL}/{category_id}", headers=superuser_token_headers)
     assert deleted.status_code == 200
@@ -54,3 +56,20 @@ def test_delete_category_with_products_conflicts(
     product = create_random_product(db)
     r = client.delete(f"{URL}/{product.category_uuid}", headers=superuser_token_headers)
     assert r.status_code == 409
+
+
+def test_duplicate_category_name_is_a_conflict(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    name = f"Electronics {random_lower_string()}"
+    body = {"name": name, "code": random_lower_string()[:20]}
+    assert (
+        client.post(f"{URL}/", json=body, headers=superuser_token_headers).status_code
+        == 200
+    )
+
+    clash = {"name": name.lower(), "code": random_lower_string()[:20]}
+    response = client.post(f"{URL}/", json=clash, headers=superuser_token_headers)
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "A category with this name already exists"

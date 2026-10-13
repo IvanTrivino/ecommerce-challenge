@@ -26,7 +26,7 @@ Automatic interactive API documentation with Swagger UI: <http://localhost:8000/
 
 Adminer, database web administration: <http://localhost:8080>
 
-RustFS (S3-compatible object storage) API: <http://localhost:9000>, web console: <http://localhost:9001>. Product images are public at `http://localhost:9000/product-images/products/<key>`.
+RustFS (S3-compatible object storage) API: <http://localhost:9000>, web console: <http://localhost:9001>. Product images are public at `http://localhost:9000/product-images/products/<key>`. The `product-imports` bucket (uploaded CSVs) is private: browse it in the RustFS console, not by URL.
 
 Elasticsearch: <http://localhost:9200>
 

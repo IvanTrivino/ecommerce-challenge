@@ -81,7 +81,7 @@ To start over without any previous revision, remove the revision files (`.py` fi
 
 ## Initial Data (Superuser)
 
-The first superuser is seeded by `./backend/app/initial_data.py`, which calls `init_db()` in `./backend/app/core/db.py` and then makes sure the S3 buckets exist (the private one and the public product images one). It is idempotent: if a user with the `FIRST_SUPERUSER` email already exists, nothing is created.
+The first superuser is seeded by `./backend/app/initial_data.py`, which calls `init_db()` in `./backend/app/core/db.py` and then makes sure the S3 buckets exist (the private one, the public product images one and the private product imports one). It is idempotent: if a user with the `FIRST_SUPERUSER` email already exists, nothing is created.
 
 The email and password come from the `FIRST_SUPERUSER` and `FIRST_SUPERUSER_PASSWORD` variables in `.env` (`.env.prod` in production). The script runs automatically as the last step of `scripts/prestart.sh`, in the `prestart` service, after the migrations. To run it again by hand:
 
@@ -133,6 +133,41 @@ $ docker compose exec celery-worker celery -A app.core.celery_app call app.tasks
 ```
 
 In production the browser talks to the storage endpoint directly, so it must use the same scheme as the frontend page, or browsers block the upload and the images (spec D5). `compose.prod.yml` runs the bundled RustFS with native TLS on `https://${STORAGE_DOMAIN}:9000`, with the same certificates as nginx. A managed S3-compatible provider works by changing the `S3_*` variables only.
+
+## Product Imports
+
+Admins create and update products in bulk from a CSV file. See the [spec](docs/specs/product-imports.md).
+
+1. A superuser calls `POST /api/v1/product-imports/presign` with the file name (`*.csv`) and size (up to 10 MB) and uploads the file straight to storage with the returned ticket, like a product image.
+2. `POST /api/v1/product-imports` with the `key` records a `product_import` row and queues the Celery task `run_product_import` (`app/tasks.py`). Calling it again with the same key returns the same import.
+3. The task streams the file from storage and applies it in batches of `PRODUCT_IMPORT_BATCH_SIZE` rows. Rows are upserted by SKU, unknown categories are created, and invalid rows are skipped and reported (`GET /product-imports/{id}/errors`).
+4. Clients poll `GET /product-imports/{id}`: `progress` is `bytes_processed / total_bytes`.
+
+The CSV bucket (`S3_PRODUCT_IMPORTS_BUCKET`) is private: the browser can only POST to it and no presigned GET is ever issued. Prestart creates it and applies its CORS rule.
+
+The reader is byte-exact (`app/services/products/imports/csv_records.py`): it knows the offset of every record, and each batch commits together with a checkpoint (`bytes_processed`, counters, row errors). A crashed or redelivered task resumes at the checkpoint with a ranged GET pinned to the upload's ETag, so no batch is applied twice. A Postgres advisory lock on the import id keeps two workers from running the same import, and only one import can be active at a time.
+
+**Bulk product writes go through `ProductRepository.upsert_many`.** It is a Core `INSERT ... ON CONFLICT DO UPDATE`, which bypasses the ORM listener that emits search events, so the method adds the `search.product` outbox events itself in the same transaction. Don't write products in bulk any other way.
+
+| Setting | Default | Purpose |
+|---|---|---|
+| `S3_PRODUCT_IMPORTS_BUCKET` | `product-imports` | Private imports bucket |
+| `PRODUCT_IMPORT_MAX_BYTES` | `10485760` | Largest allowed upload |
+| `PRODUCT_IMPORT_UPLOAD_EXPIRES_SECONDS` | `300` | How long an upload ticket is valid |
+| `PRODUCT_IMPORT_BATCH_SIZE` | `10` | Rows per transaction. Small on purpose in dev so progress and resume are visible; `compose.prod.yml` defaults to `500` |
+| `PRODUCT_IMPORT_MAX_RECORD_BYTES` | `65536` | Longest allowed CSV record (guards unterminated quotes) |
+| `PRODUCT_IMPORT_MAX_STORED_ERRORS` | `1000` | Row errors kept per import (all are still counted and logged) |
+| `PRODUCT_IMPORT_RETENTION_DAYS` | `7` | Age after which uploaded CSVs are deleted |
+| `PRODUCT_IMPORT_STALE_MINUTES` | `10` | Silence after which an active import is considered dead |
+
+Two Celery beat jobs keep things tidy. `sweep_product_import_files` runs daily at 03:45 UTC and deletes CSVs older than the retention period (except those of active imports), after which the import can no longer be retried. `reap_stale_product_imports` runs every 5 minutes and marks active imports with no heartbeat (and no advisory lock) as failed, so the single active slot is freed and the import can be retried. To run them by hand:
+
+```console
+$ docker compose exec celery-worker celery -A app.core.celery_app call app.tasks.sweep_product_import_files
+$ docker compose exec celery-worker celery -A app.core.celery_app call app.tasks.reap_stale_product_imports
+```
+
+Accepted trade-off: imports aren't queued (a second one gets a 409), and admin edits made during an import aren't coordinated with it. On the same SKU, whichever commits last wins. SKU inserts can't collide, because the upsert is atomic. See the spec, section 8.
 
 ## Email Templates
 

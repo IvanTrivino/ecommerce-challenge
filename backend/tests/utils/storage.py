@@ -1,6 +1,9 @@
+from typing import Protocol
+
 import httpx
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.db import engine
 from app.repositories import ProductRepository
 from app.schemas import ProductImageUpload, ProductImageUploadRequest
@@ -14,11 +17,26 @@ JPEG_HEADER = b"\xff\xd8\xff\xe0" + b"\x00" * 16
 WEBP_HEADER = b"RIFF\x00\x00\x00\x00WEBPVP8 "
 
 
+class UploadTicket(Protocol):
+    @property
+    def url(self) -> str: ...
+    @property
+    def fields(self) -> dict[str, str]: ...
+
+
+def internal_url(url: str) -> str:
+    """Browser URLs point at localhost:9000; tests run inside the backend container."""
+    public = settings.S3_PUBLIC_ENDPOINT_URL
+    if public and settings.S3_ENDPOINT_URL:
+        return url.replace(public, settings.S3_ENDPOINT_URL, 1)
+    return url
+
+
 def post_upload(
-    ticket: ProductImageUpload, body: bytes, content_type: str | None = None
+    ticket: UploadTicket, body: bytes, content_type: str | None = None
 ) -> httpx.Response:
     return httpx.post(
-        ticket.url,
+        internal_url(ticket.url),
         data=ticket.fields,
         files={"file": ("upload", body, content_type or ticket.fields["Content-Type"])},
     )
