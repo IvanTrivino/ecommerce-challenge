@@ -3,6 +3,7 @@ import {
   ProductCategoriesService,
   type ProductCategoryCreate,
   type ProductCreate,
+  ProductImportsService,
   ProductsService,
   UsersService,
 } from "../../src/client"
@@ -118,4 +119,44 @@ export const uploadProductImage = async (
   if (!res.ok)
     throw new Error(`Upload failed: ${res.status} ${await res.text()}`)
   return data.key
+}
+
+export const listImports = async () => {
+  await asAdmin()
+  return (
+    await ProductImportsService.readProductImports({ query: { limit: 20 } })
+  ).data
+}
+
+// Waits until no import is active, so a serial spec can start its own (only
+// one import can run at a time)
+export const waitForNoActiveImport = async (timeoutMs = 60_000) => {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    const { data } = await listImports()
+    if (!data.some((i) => i.status === "pending" || i.status === "running"))
+      return
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  }
+  throw new Error("An import stayed active")
+}
+
+export const findCategoryByName = async (name: string) => {
+  await asAdmin()
+  for (let skip = 0; ; skip += 100) {
+    const { data } = await ProductCategoriesService.readCategories({
+      query: { skip, limit: 100 },
+    })
+    const found = data.data.find((c) => c.name === name)
+    if (found) return found
+    if (data.data.length < 100) return undefined
+  }
+}
+
+// Categories are created by the imports themselves
+export const deleteImportedCategory = async (name: string) => {
+  const category = await findCategoryByName(name)
+  if (!category) return
+  await deleteProductsInCategory(category.id)
+  await deleteCategory(category.id)
 }
