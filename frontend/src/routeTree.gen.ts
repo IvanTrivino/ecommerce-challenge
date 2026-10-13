@@ -17,12 +17,16 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as StoreIndexRouteImport } from './routes/_store/index'
 import { Route as StoreAccountRouteImport } from './routes/_store/account'
+import { Route as StoreCartRouteImport } from './routes/_store/cart'
+import { Route as StoreCheckoutRouteImport } from './routes/_store/checkout'
 import { Route as StoreSearchRouteImport } from './routes/_store/search'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
 import { Route as AdminProductsRouteImport } from './routes/admin/products'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as StoreOrdersIndexRouteImport } from './routes/_store/orders.index'
+import { Route as StoreOrdersOrderIdRouteImport } from './routes/_store/orders.$orderId'
 import { Route as StoreProductsProductIdRouteImport } from './routes/_store/products.$productId'
 import { Route as AdminImportsIndexRouteImport } from './routes/admin/imports.index'
 import { Route as AdminImportsImportIdRouteImport } from './routes/admin/imports.$importId'
@@ -66,6 +70,16 @@ const StoreAccountRoute = StoreAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => StoreRoute,
 } as any)
+const StoreCartRoute = StoreCartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
+  getParentRoute: () => StoreRoute,
+} as any)
+const StoreCheckoutRoute = StoreCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => StoreRoute,
+} as any)
 const StoreSearchRoute = StoreSearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -96,6 +110,16 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
+const StoreOrdersIndexRoute = StoreOrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => StoreRoute,
+} as any)
+const StoreOrdersOrderIdRoute = StoreOrdersOrderIdRouteImport.update({
+  id: '/orders/$orderId',
+  path: '/orders/$orderId',
+  getParentRoute: () => StoreRoute,
+} as any)
 const StoreProductsProductIdRoute = StoreProductsProductIdRouteImport.update({
   id: '/products/$productId',
   path: '/products/$productId',
@@ -120,14 +144,18 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/account': typeof StoreAccountRoute
+  '/cart': typeof StoreCartRoute
+  '/checkout': typeof StoreCheckoutRoute
   '/search': typeof StoreSearchRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/': typeof AdminIndexRoute
+  '/orders/$orderId': typeof StoreOrdersOrderIdRoute
   '/products/$productId': typeof StoreProductsProductIdRoute
   '/admin/imports/$importId': typeof AdminImportsImportIdRoute
+  '/orders/': typeof StoreOrdersIndexRoute
   '/admin/imports/': typeof AdminImportsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -136,6 +164,8 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/account': typeof StoreAccountRoute
+  '/cart': typeof StoreCartRoute
+  '/checkout': typeof StoreCheckoutRoute
   '/search': typeof StoreSearchRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/products': typeof AdminProductsRoute
@@ -143,8 +173,10 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/': typeof StoreIndexRoute
   '/admin': typeof AdminIndexRoute
+  '/orders/$orderId': typeof StoreOrdersOrderIdRoute
   '/products/$productId': typeof StoreProductsProductIdRoute
   '/admin/imports/$importId': typeof AdminImportsImportIdRoute
+  '/orders': typeof StoreOrdersIndexRoute
   '/admin/imports': typeof AdminImportsIndexRoute
 }
 export interface FileRoutesById {
@@ -156,6 +188,8 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_store/account': typeof StoreAccountRoute
+  '/_store/cart': typeof StoreCartRoute
+  '/_store/checkout': typeof StoreCheckoutRoute
   '/_store/search': typeof StoreSearchRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/products': typeof AdminProductsRoute
@@ -163,8 +197,10 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/_store/': typeof StoreIndexRoute
   '/admin/': typeof AdminIndexRoute
+  '/_store/orders/$orderId': typeof StoreOrdersOrderIdRoute
   '/_store/products/$productId': typeof StoreProductsProductIdRoute
   '/admin/imports/$importId': typeof AdminImportsImportIdRoute
+  '/_store/orders/': typeof StoreOrdersIndexRoute
   '/admin/imports/': typeof AdminImportsIndexRoute
 }
 export interface FileRouteTypes {
@@ -177,14 +213,18 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/account'
+    | '/cart'
+    | '/checkout'
     | '/search'
     | '/admin/categories'
     | '/admin/products'
     | '/admin/settings'
     | '/admin/users'
     | '/admin/'
+    | '/orders/$orderId'
     | '/products/$productId'
     | '/admin/imports/$importId'
+    | '/orders/'
     | '/admin/imports/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -193,6 +233,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/account'
+    | '/cart'
+    | '/checkout'
     | '/search'
     | '/admin/categories'
     | '/admin/products'
@@ -200,8 +242,10 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/'
     | '/admin'
+    | '/orders/$orderId'
     | '/products/$productId'
     | '/admin/imports/$importId'
+    | '/orders'
     | '/admin/imports'
   id:
     | '__root__'
@@ -212,6 +256,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_store/account'
+    | '/_store/cart'
+    | '/_store/checkout'
     | '/_store/search'
     | '/admin/categories'
     | '/admin/products'
@@ -219,8 +265,10 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/_store/'
     | '/admin/'
+    | '/_store/orders/$orderId'
     | '/_store/products/$productId'
     | '/admin/imports/$importId'
+    | '/_store/orders/'
     | '/admin/imports/'
   fileRoutesById: FileRoutesById
 }
@@ -291,6 +339,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreAccountRouteImport
       parentRoute: typeof StoreRoute
     }
+    '/_store/cart': {
+      id: '/_store/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof StoreCartRouteImport
+      parentRoute: typeof StoreRoute
+    }
+    '/_store/checkout': {
+      id: '/_store/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof StoreCheckoutRouteImport
+      parentRoute: typeof StoreRoute
+    }
     '/_store/search': {
       id: '/_store/search'
       path: '/search'
@@ -333,6 +395,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_store/orders/': {
+      id: '/_store/orders/'
+      path: '/orders'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof StoreOrdersIndexRouteImport
+      parentRoute: typeof StoreRoute
+    }
+    '/_store/orders/$orderId': {
+      id: '/_store/orders/$orderId'
+      path: '/orders/$orderId'
+      fullPath: '/orders/$orderId'
+      preLoaderRoute: typeof StoreOrdersOrderIdRouteImport
+      parentRoute: typeof StoreRoute
+    }
     '/_store/products/$productId': {
       id: '/_store/products/$productId'
       path: '/products/$productId'
@@ -359,16 +435,24 @@ declare module '@tanstack/react-router' {
 
 interface StoreRouteChildren {
   StoreAccountRoute: typeof StoreAccountRoute
+  StoreCartRoute: typeof StoreCartRoute
+  StoreCheckoutRoute: typeof StoreCheckoutRoute
   StoreSearchRoute: typeof StoreSearchRoute
   StoreIndexRoute: typeof StoreIndexRoute
+  StoreOrdersOrderIdRoute: typeof StoreOrdersOrderIdRoute
   StoreProductsProductIdRoute: typeof StoreProductsProductIdRoute
+  StoreOrdersIndexRoute: typeof StoreOrdersIndexRoute
 }
 
 const StoreRouteChildren: StoreRouteChildren = {
   StoreAccountRoute: StoreAccountRoute,
+  StoreCartRoute: StoreCartRoute,
+  StoreCheckoutRoute: StoreCheckoutRoute,
   StoreSearchRoute: StoreSearchRoute,
   StoreIndexRoute: StoreIndexRoute,
+  StoreOrdersOrderIdRoute: StoreOrdersOrderIdRoute,
   StoreProductsProductIdRoute: StoreProductsProductIdRoute,
+  StoreOrdersIndexRoute: StoreOrdersIndexRoute,
 }
 
 const StoreRouteWithChildren = StoreRoute._addFileChildren(StoreRouteChildren)

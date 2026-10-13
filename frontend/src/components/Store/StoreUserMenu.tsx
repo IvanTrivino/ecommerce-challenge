@@ -1,5 +1,10 @@
 import { Link } from "@tanstack/react-router"
-import { LayoutDashboard, LogOut, User as UserIcon } from "lucide-react"
+import {
+  LayoutDashboard,
+  LogOut,
+  Package,
+  User as UserIcon,
+} from "lucide-react"
 
 import type { UserPublic } from "@/client"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -46,6 +51,12 @@ export function StoreUserMenu({ user }: { user: UserPublic }) {
           <Link to="/account">
             <UserIcon />
             My account
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/orders">
+            <Package />
+            My orders
           </Link>
         </DropdownMenuItem>
         {user.is_superuser && (
