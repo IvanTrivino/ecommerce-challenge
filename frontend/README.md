@@ -130,6 +130,7 @@ The frontend has a public storefront and an admin-only backoffice. The route fil
 | `/admin` | Overview | superuser |
 | `/admin/products` | Products CRUD | superuser |
 | `/admin/categories` | Categories CRUD | superuser |
+| `/admin/imports`, `/admin/imports/:importId` | CSV product imports: upload, history, progress, errors | superuser |
 | `/admin/users` | Users CRUD | superuser |
 | `/admin/settings` | Own account settings | superuser |
 
@@ -169,6 +170,18 @@ Admins add, replace and remove a product image from the backoffice dialogs. See 
 * `frontend/src/components/Store/ProductImage.tsx` - Shows `image_url`, with the placeholder as a fallback.
 
 Uploads go **directly** to object storage (RustFS), never through the API, with a presigned POST. Storage only accepts requests from `FRONTEND_HOST` (CORS), so in dev it must match the origin of the dev server (`http://localhost:5173`). If you serve the frontend from another origin, set `FRONTEND_HOST` in `.env` and run `docker compose exec backend python app/initial_data.py` to apply it to the bucket.
+
+### Product imports
+
+Admins create and update products in bulk from a CSV at `/admin/imports`. See the [spec](../backend/docs/specs/product-imports.md).
+
+* `frontend/src/lib/productImports.ts` - Size limit, the browser-side check, summary text and the error report builder (cells starting with `= + - @` are prefixed with `'`).
+* `frontend/src/lib/queries/productImports.ts` - Queries. The list and detail queries poll with `refetchInterval` while an import is pending or running, and stop when it ends.
+* `frontend/src/hooks/useProductImportUpload.ts` - Validates, presigns and uploads the CSV with progress.
+* `frontend/src/components/Backoffice/Imports/` - Upload card, progress panel, history columns, errors table and `useImportFinished` (refreshes products and categories and toasts when polling sees an import end).
+* `frontend/src/routes/admin/imports.index.tsx`, `imports.$importId.tsx` - The pages. All import state comes from the API, so leaving the page does not affect a running import.
+
+Like images, the CSV goes **directly** to object storage with a presigned POST, into a private bucket, so `FRONTEND_HOST` must match the dev origin (CORS on the imports bucket). Category names are unique, so the Playwright specs generate random ones.
 
 ## End-to-End Testing with Playwright
 
