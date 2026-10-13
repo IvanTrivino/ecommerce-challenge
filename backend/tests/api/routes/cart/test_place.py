@@ -1,5 +1,3 @@
-from collections.abc import Generator
-
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -20,19 +18,6 @@ from tests.utils.payments import BrokenGateway, DecliningGateway
 pytestmark = pytest.mark.usefixtures("clean_orders")
 
 CART = f"{settings.API_V1_STR}/cart"
-
-
-@pytest.fixture
-def queue(monkeypatch: pytest.MonkeyPatch) -> list[int]:
-    ids: list[int] = []
-    monkeypatch.setattr("app.api.deps.orders.enqueue_order_notification", ids.append)
-    return ids
-
-
-@pytest.fixture
-def clear_overrides() -> Generator[None]:
-    yield
-    app.dependency_overrides.pop(get_payments_gateway, None)
 
 
 def test_add_review_and_place(

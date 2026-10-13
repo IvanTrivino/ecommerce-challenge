@@ -1,16 +1,19 @@
 import uuid
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.deps import (
     CurrentUser,
+    OrderServiceDep,
     UserServiceDep,
     get_current_active_superuser,
 )
 from app.core.config import settings
 from app.schemas import (
     Message,
+    OrderPublic,
+    OrdersPublic,
     UpdatePassword,
     UserCreate,
     UserPublic,
@@ -86,6 +89,29 @@ def read_user_me(current_user: CurrentUser) -> Any:
     Get current user.
     """
     return current_user
+
+
+@router.get("/me/orders", response_model=OrdersPublic)
+def read_my_orders(
+    service: OrderServiceDep,
+    current_user: CurrentUser,
+    skip: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 10,
+) -> Any:
+    """
+    List the current user's placed orders, newest first.
+    """
+    return service.list_for_user(current_user, skip=skip, limit=limit)
+
+
+@router.get("/me/orders/{order_id}", response_model=OrderPublic)
+def read_my_order(
+    service: OrderServiceDep, current_user: CurrentUser, order_id: uuid.UUID
+) -> Any:
+    """
+    Get one of the current user's placed orders.
+    """
+    return service.get_for_user(current_user, order_id)
 
 
 @router.delete("/me", response_model=Message)

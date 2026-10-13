@@ -2,14 +2,14 @@ from collections.abc import Callable
 
 from sqlalchemy.orm import Session
 
-from app.models import User
+from app.models import Order, Product, User
 from app.repositories import (
     CartItemRepository,
     OrderNotificationRepository,
     OrderRepository,
     ProductRepository,
 )
-from app.schemas import CartPublic, PlaceOrderRequest
+from app.schemas import CartItemAdd, CartPublic, PlaceOrderRequest
 from app.services import (
     CartService,
     CheckoutService,
@@ -66,3 +66,17 @@ def load_user(session: Session, user: User) -> User:
     loaded = session.get(User, user.id)
     assert loaded is not None
     return loaded
+
+
+def placed_order(
+    session: Session,
+    user: User,
+    *pairs: tuple[Product, int],
+    enqueue: Callable[[int], None] | None = None,
+) -> Order:
+    """Add the products to the user's cart and place it."""
+    carts = cart_service(session)
+    for product, quantity in pairs:
+        carts.add_item(user, CartItemAdd(product_id=product.id, quantity=quantity))
+    cart = carts.get_cart(user)
+    return checkout_service(session, enqueue=enqueue).place(user, place_request(cart))
